@@ -29,7 +29,7 @@ TranslationHub - веб-приложение для координации пе�
 
 1. **Клонирование репозитория**
    ```bash
-   git clone https://github.com/your-username/translationhub.git
+   https://github.com/pradigmaz/translationhub.git
    cd translationhub
    ```
 
