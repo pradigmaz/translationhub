@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Доступ запрещен - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="error-page" style="text-align: center; padding: 100px 20px;">
+        <div class="error-content">
+            <h1 style="font-size: 8rem; color: #ffc107; margin: 0;">403</h1>
+            <h2 style="font-size: 2rem; margin: 20px 0; color: var(--text-color);">Доступ запрещен</h2>
+            <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
+                У вас нет прав для просмотра этой страницы.
+            </p>
+            <p style="color: #666;">
+                Возможно, вам нужно войти в систему или вы пытаетесь получить доступ к чужим данным.
+            </p>
+            <div style="margin-top: 40px;">
+                <a href="{% url 'main_page' %}" class="btn btn-primary" style="margin-right: 10px;">
+                    На главную
+                </a>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'users:login' %}" class="btn btn-secondary">
+                    Войти в систему
+                </a>
+                {% else %}
+                <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
+                    В личный кабинет
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.error-content {
+    max-width: 600px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}

@@ -1,0 +1,331 @@
+/* static/css/style.css */
+
+/* Подключаем современный шрифт с Google Fonts для красивой типографики */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+
+/* Определяем переменные для цветов. Так их легко менять во всем проекте. */
+:root {
+    --primary-color: #007bff; /* Акцентный синий */
+    --primary-hover: #0056b3; /* Синий при наведении */
+    --background-color: #f8f9fa; /* Очень светло-серый фон */
+    --text-color: #333; /* Основной цвет текста */
+    --nav-background: #ffffff; /* Белый фон навигации */
+    --footer-background: #343a40; /* Темный подвал */
+    --footer-text: #f8f9fa;   /* Светлый текст в подвале */
+}
+
+/* Общие стили для всей страницы */
+body {
+    font-family: 'Montserrat', sans-serif; /* Применяем скачанный шрифт */
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex-grow: 1;
+}
+
+/* Контейнер, который центрирует контент и ограничивает его ширину */
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* --- Стили для Навигации (Шапка из base.html) --- */
+.main-nav {
+    background-color: var(--nav-background);
+    padding: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Легкая тень для объема */
+    position: sticky; /* Шапка "прилипает" к верху при прокрутке */
+    top: 0;
+    z-index: 1000;
+}
+
+.main-nav .container {
+    display: flex; /* Используем Flexbox для выравнивания */
+    justify-content: space-between; /* Элементы по краям */
+    align-items: center; /* Элементы по центру по вертикали */
+}
+
+.main-nav .logo {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.main-nav .nav-links a {
+    text-decoration: none;
+    color: var(--text-color);
+    margin-left: 20px;
+    transition: color 0.3s ease; /* Плавный переход цвета */
+}
+
+.main-nav .nav-links a:hover {
+    color: var(--primary-color);
+}
+
+/* --- Стили для Главного экрана (Hero Section) --- */
+.hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 100px 20px;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+}
+
+/* --- Общие стили для кнопок --- */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    text-decoration: none;
+    border-radius: 5px;
+    font-weight: 700;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px); /* Легкий эффект "подъема" */
+}
+
+
+/* --- Стили для секции Преимуществ --- */
+.features {
+    padding: 80px 0;
+    text-align: center;
+}
+
+.features h2 {
+    font-size: 2.5rem;
+    margin-bottom: 60px;
+}
+
+.features-grid {
+    display: grid; /* Используем CSS Grid для создания колонок */
+    grid-template-columns: repeat(3, 1fr); /* 3 колонки одинаковой ширины */
+    gap: 40px; /* Пространство между колонками */
+}
+
+.feature-item {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    opacity: 0; /* Изначально невидимы для анимации */
+    transform: translateY(20px); /* Смещены вниз для анимации */
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Класс, который будет добавляться с помощью JS для появления */
+.feature-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.feature-item .icon {
+    font-size: 3rem;
+    color: var(--primary-color);
+    margin-bottom: 20px;
+}
+
+.feature-item h3 {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+}
+
+/* --- Стили для Подвала (Footer) --- */
+.main-footer {
+    background-color: var(--footer-background);
+    color: var(--footer-text);
+    text-align: center;
+    padding: 2rem 0;
+    margin-top: 60px;
+}
+
+/* Контейнер, который центрирует форму и задает ей рамку */
+.form-container {
+    max-width: 600px;
+    margin: 40px auto; /* Отступы сверху/снизу и авто-центрирование по горизонтали */
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.form-container h2 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+
+/* Группа, объединяющая лейбл, поле ввода и подсказки */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block; /* Лейбл будет на своей строке */
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+/* Стили для текстовых полей и полей пароля */
+.form-group input[type="text"],
+.form-group input[type="password"],
+.form-group input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: 'Montserrat', sans-serif; /* Используем наш шрифт */
+    box-sizing: border-box; /* Чтобы padding не влиял на ширину */
+}
+
+/* Стили для системных подсказок Django */
+.form-group .helptext {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Стили для списка ошибок валидации */
+.form-group .errorlist {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    color: #dc3545; /* Красный цвет для ошибок */
+    font-weight: bold;
+}
+
+/* --- Стили для Личного кабинета (Dashboard) --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Адаптивные колонки */
+    gap: 40px;
+    margin-top: 40px;
+}
+
+.dashboard-block {
+    background-color: #ffffff;
+    padding: 20px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+.dashboard-block h2 {
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+    margin-top: 0;
+}
+
+.dashboard-list {
+    list-style: none;
+    padding: 0;
+}
+
+.dashboard-list li {
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.dashboard-list li:last-child {
+    border-bottom: none;
+}
+
+.dashboard-list a {
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.dashboard-list a:hover {
+    color: var(--primary-color);
+}
+
+/* --- Стили для статусов задач --- */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.status-raw { background-color: #6c757d; color: white; }
+.status-translating { background-color: #007bff; color: white; }
+.status-cleaning { background-color: #ffc107; color: black; }
+.status-typesetting { background-color: #fd7e14; color: white; }
+.status-editing { background-color: #dc3545; color: white; }
+.status-done { background-color: #28a745; color: white; }
+
+/* --- Стили для кнопок действий --- */
+.action-buttons {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+}
+
+/* --- Стили для алертов --- */
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* --- Стили для подсказок в формах --- */
+.form-text {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.form-links {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.form-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.form-links a:hover {
+    text-decoration: underline;
+}
+

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}{{ team.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Отображаем название команды, которое DetailView передал в шаблон -->
+    <h1>Команда: {{ team.name }}</h1>
+    <p>{{ team.description|linebreaks }}</p>
+
+    <hr>
+
+    <div class="dashboard-block">
+        <h2>Проекты команды</h2>
+        {% if projects %}
+            <ul class="dashboard-list">
+                {% for project in projects %}
+                    <!-- Ссылка пока никуда не ведет, но скоро мы это исправим -->
+                    <li><a href="#">{{ project.title }} ({{ project.get_status_display }})</a></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>У этой команды пока нет проектов.</p>
+        {% endif %}
+        <!-- Здесь позже будет кнопка "Добавить проект" -->
+    </div>
+
+</div>
+{% endblock %}
