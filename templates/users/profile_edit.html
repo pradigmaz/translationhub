@@ -1,0 +1,273 @@
+{% extends "base.html" %} {% load form_tags %} {% block title %}Редактирование
+профиля{% endblock %} {% block content %}
+<!-- Интегрируем user_header компонент -->
+{% include "users/components/user_header.html" %}
+
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h2 class="card-title h4 mb-0">
+            <i class="fas fa-user-edit me-2"></i>Редактирование профиля
+          </h2>
+        </div>
+        <div class="card-body">
+          {% if messages %} {% for message in messages %}
+          <div
+            class="alert alert-{{ message.tags }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="alert"
+            ></button>
+          </div>
+          {% endfor %} {% endif %}
+
+          <form
+            method="post"
+            enctype="multipart/form-data"
+            class="needs-validation"
+            novalidate
+          >
+            {% csrf_token %}
+
+            <!-- Текущая аватарка -->
+            <div class="row mb-4">
+              <div class="col-12 text-center">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Текущая аватарка</label>
+                  <div class="d-flex justify-content-center">
+                    {% user_avatar user size="120" css_class="border shadow-sm" %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <!-- Основная информация -->
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label
+                    for="{{ form.display_name.id_for_label }}"
+                    class="form-label fw-bold"
+                  >
+                    <i class="fas fa-user me-1"></i>Имя для отображения
+                  </label>
+                  {{ form.display_name }} {% if form.display_name.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.display_name.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Это имя будет отображаться в системе вместо логина
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label
+                    for="{{ form.email.id_for_label }}"
+                    class="form-label fw-bold"
+                  >
+                    <i class="fas fa-envelope me-1"></i>Email
+                  </label>
+                  {{ form.email }} {% if form.email.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.email.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Используется для уведомлений и восстановления пароля
+                  </div>
+                </div>
+              </div>
+
+              <!-- Загрузка аватарки -->
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label
+                    for="{{ form.avatar.id_for_label }}"
+                    class="form-label fw-bold"
+                  >
+                    <i class="fas fa-image me-1"></i>Загрузить новую аватарку
+                  </label>
+                  {{ form.avatar }} {% if form.avatar.errors %}
+                  <div class="invalid-feedback d-block">
+                    {{ form.avatar.errors.0 }}
+                  </div>
+                  {% endif %}
+                  <div class="form-text">
+                    Поддерживаются форматы JPG и PNG, максимальный размер 2MB
+                  </div>
+                </div>
+
+                <!-- Предварительный просмотр новой аватарки -->
+                <div class="mb-3" id="avatar-preview" style="display: none">
+                  <label class="form-label fw-bold"
+                    >Предварительный просмотр</label
+                  >
+                  <div class="d-flex justify-content-center">
+                    <img
+                      id="avatar-preview-img"
+                      src=""
+                      alt="Предварительный просмотр"
+                      class="rounded-circle border"
+                      width="100"
+                      height="100"
+                    />
+                  </div>
+                </div>
+
+                <!-- Заглушка для предварительного просмотра -->
+                <div class="mb-3" id="avatar-placeholder" style="display: none">
+                  <label class="form-label fw-bold"
+                    >Предварительный просмотр</label
+                  >
+                  <div class="d-flex justify-content-center">
+                    <i
+                      class="fas fa-user-circle text-muted"
+                      style="font-size: 100px"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Дополнительная информация -->
+            <div class="row">
+              <div class="col-12">
+                <div class="card bg-light">
+                  <div class="card-body">
+                    <h6 class="card-title">
+                      <i class="fas fa-info-circle me-1"></i>Информация об
+                      аккаунте
+                    </h6>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <p class="mb-1">
+                          <strong>Логин:</strong> {{ user.username }}
+                        </p>
+                        <p class="mb-1">
+                          <strong>Дата регистрации:</strong> {{
+                          user.date_joined|date:"d.m.Y" }}
+                        </p>
+                      </div>
+                      <div class="col-md-6">
+                        <p class="mb-1">
+                          <strong>Последний вход:</strong>
+                          {% if user.last_login %} {{
+                          user.last_login|date:"d.m.Y H:i" }} {% else %} Никогда
+                          {% endif %}
+                        </p>
+                        <p class="mb-1">
+                          <strong>Статус:</strong>
+                          {% if user.is_active %}
+                          <span class="badge bg-success">Активен</span>
+                          {% else %}
+                          <span class="badge bg-danger">Неактивен</span>
+                          {% endif %}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="d-flex justify-content-between">
+                  <a
+                    href="{% url 'users:dashboard' %}"
+                    class="btn btn-outline-secondary"
+                  >
+                    <i class="fas fa-arrow-left me-1"></i>Назад к дашборду
+                  </a>
+                  <div>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger me-2"
+                      id="reset-form"
+                    >
+                      <i class="fas fa-undo me-1"></i>Сбросить
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                      <i class="fas fa-save me-1"></i>Сохранить изменения
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Предварительный просмотр аватарки
+    const avatarInput = document.getElementById(
+      "{{ form.avatar.id_for_label }}"
+    );
+    const previewDiv = document.getElementById("avatar-preview");
+    const previewImage = document.getElementById("avatar-preview-img");
+
+    if (avatarInput) {
+      avatarInput.addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Проверка типа файла
+          if (!file.type.match("image.*")) {
+            alert("Пожалуйста, выберите изображение");
+            return;
+          }
+
+          // Проверка размера файла (2MB)
+          if (file.size > 2 * 1024 * 1024) {
+            alert("Размер файла не должен превышать 2MB");
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            previewImage.src = e.target.result;
+            previewDiv.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        } else {
+          previewDiv.style.display = "none";
+        }
+      });
+    }
+
+    // Сброс формы
+    const resetButton = document.getElementById("reset-form");
+    if (resetButton) {
+      resetButton.addEventListener("click", function () {
+        if (confirm("Вы уверены, что хотите сбросить все изменения?")) {
+          document.querySelector("form").reset();
+          previewDiv.style.display = "none";
+        }
+      });
+    }
+
+    // Валидация формы
+    const form = document.querySelector(".needs-validation");
+    if (form) {
+      form.addEventListener("submit", function (e) {
+        if (!form.checkValidity()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        form.classList.add("was-validated");
+      });
+    }
+  });
+</script>
+{% endblock %}

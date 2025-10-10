@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Загрузка переменных окружения из .env файла
 load_dotenv()
@@ -21,14 +22,27 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def get_env_variable(var_name, default=None):
+    """Получить переменную окружения или вызвать исключение"""
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        if default is not None:
+            return default
+        error_msg = f"Set the {var_name} environment variable"
+        raise ImproperlyConfigured(error_msg)
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-zrh7n+0k5wt%@r(qi$j-6q#&1keynqpc39q$%_tn@7_^m(fa-7')
+# Убираем небезопасный fallback ключ
+SECRET_KEY = get_env_variable('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
+# По умолчанию DEBUG = False для безопасности
+DEBUG = get_env_variable('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
@@ -45,6 +59,7 @@ INSTALLED_APPS = [
     
     'background_task',
     
+    'core.apps.CoreConfig',  # Добавляем core app для доступа к template tags
     'users.apps.UsersConfig', 
     'teams.apps.TeamsConfig',
     'projects.apps.ProjectsConfig',
@@ -54,6 +69,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'core.middleware.SecurityMiddleware',  # Кастомный middleware безопасности
+    'core.middleware.RateLimitMiddleware',  # Ограничение частоты запросов
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -102,6 +119,9 @@ AUTH_PASSWORD_VALIDATORS = [
     },
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'OPTIONS': {
+            'min_length': 12,  # Увеличиваем минимальную длину пароля
+        }
     },
     {
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
@@ -133,6 +153,17 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static')
 ]
 
+# Папка для сбора статических файлов в продакшн
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Максимальный размер загружаемых файлов (2MB для аватарок)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2MB
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -148,12 +179,67 @@ SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Дополнительные настройки безопасности
+SECURE_SSL_REDIRECT = not DEBUG  # Принудительный HTTPS в продакшене
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0  # HTTP Strict Transport Security (1 год)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG  # HSTS для поддоменов
+SECURE_HSTS_PRELOAD = not DEBUG  # HSTS preload
+SECURE_REFERRER_POLICY = 'same-origin'  # Referrer Policy
+
 # Настройки сессий
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 3600  # Сессия истекает через 1 час
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Сессия закрывается при закрытии браузера
+SESSION_SAVE_EVERY_REQUEST = True  # Обновляем время сессии при каждом запросе
 
 # Настройки медиафайлов
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Создаем директорию для логов если её нет
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
+# Настройки логирования безопасности
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'security_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': LOGS_DIR / 'security.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        'security': {
+            'handlers': ['security_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['security_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}

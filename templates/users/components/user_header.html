@@ -1,0 +1,39 @@
+<!-- templates/users/components/user_header.html -->
+{% load form_tags %}
+
+<div class="bg-white shadow-sm border-bottom mb-4">
+    <div class="container py-3">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <!-- Декоративная аватарка пользователя -->
+                <div>
+                    {% user_avatar user size="50" css_class="text-primary" %}
+                </div>
+            </div>
+            
+            <div class="col">
+                <h4 class="mb-1 fw-bold">
+                    Добро пожаловать, {{ user.display_name|default:user.username }}!
+                </h4>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-envelope me-1"></i>{{ user.email|default:"Email не указан" }}
+                </p>
+            </div>
+            
+            <!-- Быстрые ссылки -->
+            <div class="col-auto d-none d-md-block">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'users:dashboard' %}" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                        <i class="fas fa-tachometer-alt"></i>Дашборд
+                    </a>
+                    <a href="{% url 'users:teams' %}" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                        <i class="fas fa-users"></i>Команды
+                    </a>
+                    <a href="{% url 'users:tasks' %}" class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1">
+                        <i class="fas fa-tasks"></i>Задачи
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

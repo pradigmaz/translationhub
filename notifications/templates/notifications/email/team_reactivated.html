@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Команда возобновлена</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #28a745;
+            color: white;
+            padding: 20px;
+            border-radius: 8px 8px 0 0;
+            text-align: center;
+        }
+        .content {
+            background-color: #fff;
+            padding: 30px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+            text-align: center;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .alert {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>▶️ Команда возобновлена</h1>
+    </div>
+    
+    <div class="content">
+        <p>Здравствуйте, {{ recipient.username }}!</p>
+        
+        <div class="alert">
+            <strong>Команда "{{ extra_data.team_name }}" возобновила работу!</strong>
+        </div>
+        
+        <p>{{ message }}</p>
+        
+        {% if extra_data.reason %}
+        <p><strong>Причина:</strong> {{ extra_data.reason }}</p>
+        {% endif %}
+        
+        <p>Теперь доступно:</p>
+        <ul>
+            <li>Все функции управления командой восстановлены</li>
+            <li>Команда снова отображается в списках активных команд</li>
+            <li>Все участники могут полноценно работать с проектами</li>
+        </ul>
+        
+        <p>Добро пожаловать обратно в активную команду!</p>
+    </div>
+    
+    <div class="footer">
+        <p>Это автоматическое уведомление от {{ site_name }}.<br>
+        Вы получили это письмо, потому что являетесь участником команды.</p>
+    </div>
+</body>
+</html>

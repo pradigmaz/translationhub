@@ -3,67 +3,27 @@
 {% block title %}Страница не найдена - TranslationHub{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="error-page" style="text-align: center; padding: 100px 20px;">
-        <div class="error-content">
-            <h1 style="font-size: 8rem; color: var(--primary-color); margin: 0;">404</h1>
-            <h2 style="font-size: 2rem; margin: 20px 0; color: var(--text-color);">Страница не найдена</h2>
-            <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                К сожалению, запрашиваемая страница не существует или была перемещена.
-            </p>
-            <div style="margin-top: 40px;">
-                <a href="{% url 'main_page' %}" class="btn btn-primary" style="margin-right: 10px;">
-                    На главную
-                </a>
-                {% if user.is_authenticated %}
-                <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
-                    В личный кабинет
-                </a>
-                {% endif %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="py-5">
+                <h1 class="display-1 text-primary fw-bold">404</h1>
+                <h2 class="h3 mb-3">Страница не найдена</h2>
+                <p class="lead text-muted mb-4">
+                    К сожалению, запрашиваемая страница не существует или была перемещена.
+                </p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'main_page' %}" class="btn btn-primary">
+                        На главную
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary">
+                        В личный кабинет
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.error-page {
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.error-content {
-    max-width: 600px;
-}
-
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: 700;
-    transition: all 0.3s ease;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-2px);
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #545b62;
-    transform: translateY(-2px);
-}
-</style>
 {% endblock %}

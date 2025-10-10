@@ -3,70 +3,28 @@
 {% block title %}Ошибка сервера - TranslationHub{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="error-page" style="text-align: center; padding: 100px 20px;">
-        <div class="error-content">
-            <h1 style="font-size: 8rem; color: #dc3545; margin: 0;">500</h1>
-            <h2 style="font-size: 2rem; margin: 20px 0; color: var(--text-color);">Внутренняя ошибка сервера</h2>
-            <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                Произошла ошибка на сервере. Мы уже работаем над её устранением.
-            </p>
-            <p style="color: #666;">
-                Попробуйте обновить страницу через несколько минут или вернитесь на главную.
-            </p>
-            <div style="margin-top: 40px;">
-                <a href="{% url 'main_page' %}" class="btn btn-primary" style="margin-right: 10px;">
-                    На главную
-                </a>
-                <button onclick="window.location.reload()" class="btn btn-secondary">
-                    Обновить страницу
-                </button>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="py-5">
+                <h1 class="display-1 text-danger fw-bold">500</h1>
+                <h2 class="h3 mb-3">Внутренняя ошибка сервера</h2>
+                <p class="lead text-muted mb-3">
+                    Произошла ошибка на сервере. Мы уже работаем над её устранением.
+                </p>
+                <p class="text-muted mb-4">
+                    Попробуйте обновить страницу через несколько минут или вернитесь на главную.
+                </p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'main_page' %}" class="btn btn-primary">
+                        На главную
+                    </a>
+                    <button onclick="window.location.reload()" class="btn btn-outline-secondary">
+                        Обновить страницу
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-.error-page {
-    min-height: 60vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.error-content {
-    max-width: 600px;
-}
-
-.btn {
-    display: inline-block;
-    padding: 12px 24px;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-2px);
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background-color: #545b62;
-    transform: translateY(-2px);
-}
-</style>
 {% endblock %}

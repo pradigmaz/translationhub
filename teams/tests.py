@@ -192,3 +192,92 @@ class SecurityTest(TestCase):
         # Проверяем, что команда создалась, если был редирект
         if response.status_code == 302:
             self.assertTrue(Team.objects.filter(name='New Team').exists())
+
+
+class TeamStatusChangeAjaxTest(TestCase):
+    """Тесты AJAX функциональности изменения статуса команды"""
+    
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.team = Team.objects.create(
+            name='Test Team',
+            creator=self.user
+        )
+        
+    def test_ajax_status_change_success(self):
+        """Тест успешного AJAX изменения статуса команды"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        # Тестируем приостановку команды через AJAX
+        response = self.client.post(
+            reverse('teams:team_status_change', kwargs={'team_id': self.team.pk}),
+            {
+                'action': 'deactivate',
+                'reason': 'Test reason'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # Проверяем JSON ответ
+        json_response = response.json()
+        self.assertTrue(json_response['success'])
+        self.assertEqual(json_response['team_status'], 'inactive')
+        self.assertIn('приостановлена', json_response['message'])
+        
+        # Проверяем, что статус действительно изменился в базе данных
+        self.team.refresh_from_db()
+        self.assertEqual(self.team.status, 'inactive')
+        
+    def test_ajax_status_change_invalid_action(self):
+        """Тест AJAX запроса с невалидным действием"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        response = self.client.post(
+            reverse('teams:team_status_change', kwargs={'team_id': self.team.pk}),
+            {
+                'action': 'invalid_action',
+                'reason': 'Test reason'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        
+        # Проверяем JSON ответ об ошибке
+        json_response = response.json()
+        self.assertFalse(json_response['success'])
+        self.assertIn('Неизвестное действие', json_response['message'])
+        
+    def test_ajax_vs_regular_request(self):
+        """Тест различия между AJAX и обычными запросами"""
+        self.client.login(username='testuser', password='testpass123')
+        
+        # Обычный POST запрос должен возвращать редирект
+        response = self.client.post(
+            reverse('teams:team_status_change', kwargs={'team_id': self.team.pk}),
+            {
+                'action': 'deactivate',
+                'reason': 'Test reason'
+            }
+        )
+        
+        self.assertEqual(response.status_code, 302)  # Редирект
+        
+        # AJAX запрос должен возвращать JSON
+        response = self.client.post(
+            reverse('teams:team_status_change', kwargs={'team_id': self.team.pk}),
+            {
+                'action': 'reactivate',
+                'reason': 'Test reason'
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'application/json')

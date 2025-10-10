@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}История команды "{{ team.name }}"{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Bootstrap 5.3 Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb bg-light rounded px-3 py-2 shadow-sm">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'teams:team_list' %}" class="text-decoration-none">
+                            <i class="fas fa-users me-1"></i>Команды
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'teams:team_detail' team.pk %}" class="text-decoration-none">
+                            <i class="fas fa-users-cog me-1"></i>{{ team.name }}
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active fw-semibold" aria-current="page">
+                        <i class="fas fa-history me-1"></i>История изменений
+                    </li>
+                </ol>
+            </nav>
+            
+            <!-- Main Card with Bootstrap 5.3 styling -->
+            <div class="card shadow border-0 rounded-3">
+                <div class="card-header text-bg-info border-0 py-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <h1 class="card-title h4 mb-0 fw-bold d-flex align-items-center">
+                            <i class="fas fa-history me-2 fs-5"></i>
+                            История изменений команды "{{ team.name }}"
+                        </h1>
+                        <span class="badge text-bg-light rounded-pill px-3 py-2">
+                            <i class="fas fa-clock me-1"></i>
+                            Последнее обновление: {{ team.updated_at|date:"d.m.Y H:i" }}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    {% if status_history %}
+                        <!-- Statistics Section with Bootstrap 5.3 Cards -->
+                        <div class="bg-light border-bottom p-3">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-chart-line text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ status_history|length }}</div>
+                                            <small class="text-muted">Всего изменений</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-calendar-plus text-success"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ team.created_at|date:"d.m.Y" }}</div>
+                                            <small class="text-muted">Дата создания</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="fas fa-clock text-info"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ status_history.0.timestamp|date:"d.m.Y" }}</div>
+                                            <small class="text-muted">Последнее изменение</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bootstrap 5.3 Table with proper styling -->
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover align-middle mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th scope="col" class="border-0 fw-semibold">
+                                            <i class="fas fa-calendar-alt me-2 text-light"></i>Дата и время
+                                        </th>
+                                        <th scope="col" class="border-0 fw-semibold">
+                                            <i class="fas fa-cogs me-2 text-light"></i>Действие
+                                        </th>
+                                        <th scope="col" class="border-0 fw-semibold">
+                                            <i class="fas fa-exchange-alt me-2 text-light"></i>Изменение статуса
+                                        </th>
+                                        <th scope="col" class="border-0 fw-semibold">
+                                            <i class="fas fa-user me-2 text-light"></i>Выполнил
+                                        </th>
+                                        <th scope="col" class="border-0 fw-semibold">
+                                            <i class="fas fa-comment me-2 text-light"></i>Причина
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for change in status_history %}
+                                    <tr class="border-bottom border-light">
+                                        <td class="py-3">
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-dark fs-6">{{ change.timestamp|date:"d.m.Y" }}</span>
+                                                <small class="text-body-secondary">{{ change.timestamp|date:"H:i:s" }}</small>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <!-- Bootstrap 5.3 Badge with proper text-bg-* classes -->
+                                            <span class="badge rounded-pill px-3 py-2 fs-6 shadow-sm
+                                                {% if change.change_type == 'created' %}text-bg-success
+                                                {% elif change.change_type == 'deactivated' %}text-bg-warning
+                                                {% elif change.change_type == 'reactivated' %}text-bg-info
+                                                {% else %}text-bg-danger{% endif %}">
+                                                <i class="fas 
+                                                    {% if change.change_type == 'created' %}fa-plus-circle
+                                                    {% elif change.change_type == 'deactivated' %}fa-pause-circle
+                                                    {% elif change.change_type == 'reactivated' %}fa-play-circle
+                                                    {% else %}fa-times-circle{% endif %} me-2"></i>
+                                                {{ change.get_change_type_display }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3">
+                                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                                {% if change.old_status %}
+                                                    <span class="badge text-bg-secondary rounded-pill px-3 py-1 fs-6">
+                                                        {{ change.get_old_status_display }}
+                                                    </span>
+                                                    <i class="fas fa-arrow-right text-muted fs-5"></i>
+                                                    <span class="badge text-bg-primary rounded-pill px-3 py-1 fs-6">
+                                                        {{ change.get_new_status_display }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge text-bg-primary rounded-pill px-3 py-1 fs-6">
+                                                        <i class="fas fa-star me-1"></i>{{ change.get_new_status_display }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            {% if change.changed_by %}
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3 shadow-sm">
+                                                        <i class="fas fa-user text-primary fs-6"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-bold text-dark">{{ change.changed_by.username }}</div>
+                                                        {% if change.changed_by.first_name or change.changed_by.last_name %}
+                                                            <small class="text-body-secondary">
+                                                                {{ change.changed_by.first_name }} {{ change.changed_by.last_name }}
+                                                            </small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-3 shadow-sm">
+                                                        <i class="fas fa-robot text-secondary fs-6"></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="fw-semibold text-secondary">Система</span>
+                                                        <br><small class="text-body-secondary">Автоматическое действие</small>
+                                                    </div>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3">
+                                            {% if change.reason %}
+                                                <div class="bg-light rounded-3 p-3 border-start border-4 border-info shadow-sm" style="max-width: 280px;">
+                                                    <i class="fas fa-quote-left text-info me-2"></i>
+                                                    <small class="text-dark fw-medium">{{ change.reason }}</small>
+                                                </div>
+                                            {% else %}
+                                                <div class="text-center py-2">
+                                                    <i class="fas fa-minus text-muted"></i>
+                                                    <br><small class="text-body-secondary">Не указана</small>
+                                                </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Bootstrap 5.3 Alert with dismissible functionality -->
+                        {% if status_history|length >= 50 %}
+                            <div class="mx-3 mb-3">
+                                <div class="alert alert-info alert-dismissible fade show border-0 shadow-sm" role="alert">
+                                    <div class="d-flex align-items-start">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                            <i class="fas fa-info-circle text-info fs-5"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <h6 class="alert-heading fw-bold mb-2">
+                                                <i class="fas fa-eye me-1"></i>Ограничение отображения
+                                            </h6>
+                                            <p class="mb-0 text-dark">
+                                                Показаны последние 50 изменений. Для просмотра полной истории 
+                                                обратитесь к администратору системы.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Закрыть"></button>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                    {% else %}
+                        <!-- Empty state with Bootstrap 5.3 styling -->
+                        <div class="text-center py-5 px-4">
+                            <div class="mb-4">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px;">
+                                    <i class="fas fa-history text-muted opacity-50" style="font-size: 3rem;"></i>
+                                </div>
+                            </div>
+                            <h4 class="text-muted mb-3 fw-bold">История изменений пуста</h4>
+                            <p class="text-muted mb-4 fs-5">
+                                Команда была создана недавно и изменений статуса еще не было.
+                            </p>
+                            
+                            <!-- Bootstrap 5.3 Alert component -->
+                            <div class="alert alert-info border-0 shadow-sm d-inline-block rounded-3" role="alert">
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                        <i class="fas fa-lightbulb text-info"></i>
+                                    </div>
+                                    <div class="text-start">
+                                        <div class="fw-semibold text-info mb-1">Подсказка</div>
+                                        <small class="text-dark">История будет пополняться при изменении статуса команды</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Bootstrap 5.3 Card Footer with proper styling -->
+                <div class="card-footer bg-light border-0 py-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'teams:team_detail' team.pk %}" class="btn btn-primary shadow-sm rounded-pill px-4">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Вернуться к команде
+                            </a>
+                        </div>
+                        
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if can_manage_team %}
+                                <a href="{% url 'teams:team_status_change' team.pk %}" class="btn btn-outline-secondary shadow-sm rounded-pill">
+                                    <i class="fas fa-cogs me-2"></i>
+                                    Управление статусом
+                                </a>
+                            {% endif %}
+                            
+                            <button class="btn btn-outline-info shadow-sm rounded-pill" onclick="window.print()" title="Печать истории">
+                                <i class="fas fa-print me-2"></i>
+                                Печать
+                            </button>
+                            
+                            <button class="btn btn-outline-success shadow-sm rounded-pill" onclick="exportHistory()" title="Экспорт в CSV">
+                                <i class="fas fa-download me-2"></i>
+                                Экспорт
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5.3 JavaScript functionality -->
+<script>
+function exportHistory() {
+    // Simple CSV export functionality
+    const table = document.querySelector('.table');
+    if (!table) return;
+    
+    let csv = 'Дата и время,Действие,Изменение статуса,Выполнил,Причина\n';
+    
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const rowData = Array.from(cells).map(cell => {
+            return '"' + cell.textContent.trim().replace(/"/g, '""') + '"';
+        });
+        csv += rowData.join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'team_history_{{ team.name|slugify }}.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Bootstrap 5.3 Tooltip initialization
+document.addEventListener('DOMContentLoaded', function() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+{% endblock %}

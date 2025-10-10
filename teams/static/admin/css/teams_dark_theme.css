@@ -1,0 +1,122 @@
+/* Стили для тёмной темы админки Django - команды */
+
+/* Адаптация для тёмной темы */
+[data-theme="dark"] .warning-box,
+body[data-theme="dark"] .warning-box {
+    background-color: #4a5568 !important;
+    border-color: #ed8936 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .warning-box h3,
+body[data-theme="dark"] .warning-box h3 {
+    color: #fbb6ce !important;
+}
+
+/* Таблицы в тёмной теме */
+[data-theme="dark"] table th,
+[data-theme="dark"] table td,
+body[data-theme="dark"] table th,
+body[data-theme="dark"] table td {
+    border-bottom: 1px solid #4a5568 !important;
+}
+
+[data-theme="dark"] table th,
+body[data-theme="dark"] table th {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] table td,
+body[data-theme="dark"] table td {
+    color: #cbd5e0 !important;
+}
+
+[data-theme="dark"] table tr:nth-child(even),
+body[data-theme="dark"] table tr:nth-child(even) {
+    background-color: #2d3748 !important;
+}
+
+/* Кнопки в тёмной теме */
+[data-theme="dark"] .delete-button,
+[data-theme="dark"] .cancel-button,
+[data-theme="dark"] .cancel-link,
+body[data-theme="dark"] .delete-button,
+body[data-theme="dark"] .cancel-button,
+body[data-theme="dark"] .cancel-link {
+    border: 1px solid !important;
+}
+
+[data-theme="dark"] .delete-button:hover,
+body[data-theme="dark"] .delete-button:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: white !important;
+}
+
+[data-theme="dark"] .cancel-button:hover,
+[data-theme="dark"] .cancel-link:hover,
+body[data-theme="dark"] .cancel-button:hover,
+body[data-theme="dark"] .cancel-link:hover {
+    background-color: #5a6268 !important;
+    border-color: #545b62 !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* Бейджи ролей в тёмной теме */
+[data-theme="dark"] .badge,
+body[data-theme="dark"] .badge {
+    background-color: #4299e1 !important;
+    color: white !important;
+}
+
+/* Модули в тёмной теме */
+[data-theme="dark"] .module.aligned,
+body[data-theme="dark"] .module.aligned {
+    background-color: #2d3748 !important;
+    border: 1px solid #4a5568 !important;
+}
+
+[data-theme="dark"] .module.aligned h2,
+[data-theme="dark"] .module.aligned h3,
+body[data-theme="dark"] .module.aligned h2,
+body[data-theme="dark"] .module.aligned h3 {
+    color: #e2e8f0 !important;
+}
+
+/* Форма в тёмной теме */
+[data-theme="dark"] .form-row div,
+body[data-theme="dark"] .form-row div {
+    color: #cbd5e0 !important;
+}
+
+[data-theme="dark"] .form-row strong,
+body[data-theme="dark"] .form-row strong {
+    color: #e2e8f0 !important;
+}
+
+/* Кнопка удаления в списке команд */
+[data-theme="dark"] .delete-team-btn,
+body[data-theme="dark"] .delete-team-btn {
+    background-color: #dc3545 !important;
+    color: white !important;
+    border: 1px solid #dc3545 !important;
+}
+
+[data-theme="dark"] .delete-team-btn:hover,
+body[data-theme="dark"] .delete-team-btn:hover {
+    background-color: #c82333 !important;
+    border-color: #bd2130 !important;
+    color: white !important;
+    text-decoration: none !important;
+}
+
+/* ===== TEAM LIFECYCLE MANAGEMENT DARK THEME STYLES ===== */
+/* Только необходимые стили для тёмной темы */
+
+/* Dark theme для индикатора статуса на аватаре */
+[data-theme="dark"] .team-member-avatar .status-indicator,
+body[data-theme="dark"] .team-member-avatar .status-indicator {
+    border-color: #212529 !important;
+}

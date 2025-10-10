@@ -1,0 +1,866 @@
+<!-- templates/teams/team_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}Мои команды - TranslationHub{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+
+<!-- Проверка аутентификации -->
+{% if not user.is_authenticated %}
+<div class="container py-4">
+  <div class="alert alert-warning">
+    <h4>Требуется вход в систему</h4>
+    <p>Для просмотра команд необходимо войти в систему.</p>
+    <a href="{% url 'users:login' %}" class="btn btn-primary">Войти</a>
+  </div>
+</div>
+{% else %}
+
+<div class="container py-4" style="overflow-x: hidden;">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Мои команды</h2>
+        <a
+          href="{% url 'teams:team_create' %}"
+          class="btn btn-primary d-flex align-items-center gap-2"
+        >
+          <i class="fas fa-plus"></i>Создать новую команду
+        </a>
+      </div>
+
+      <!-- Статистика по статусам команд с улучшенным Bootstrap 5.3 дизайном -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+              <div class="row text-center g-4">
+                <div class="col-md-3">
+                  <div class="card h-100 border-0 bg-success bg-opacity-10">
+                    <div
+                      class="card-body d-flex align-items-center justify-content-center"
+                    >
+                      <div class="text-center">
+                        <i
+                          class="fas fa-check-circle text-success fs-1 mb-2"
+                        ></i>
+                        <div class="h3 mb-1 fw-bold text-success">
+                          {{ status_counts.active }}
+                        </div>
+                        <small class="text-muted fw-semibold"
+                          >Активных команд</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card h-100 border-0 bg-warning bg-opacity-10">
+                    <div
+                      class="card-body d-flex align-items-center justify-content-center"
+                    >
+                      <div class="text-center">
+                        <i
+                          class="fas fa-pause-circle text-warning fs-1 mb-2"
+                        ></i>
+                        <div class="h3 mb-1 fw-bold text-warning">
+                          {{ status_counts.inactive }}
+                        </div>
+                        <small class="text-muted fw-semibold"
+                          >Приостановленных</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card h-100 border-0 bg-danger bg-opacity-10">
+                    <div
+                      class="card-body d-flex align-items-center justify-content-center"
+                    >
+                      <div class="text-center">
+                        <i
+                          class="fas fa-times-circle text-danger fs-1 mb-2"
+                        ></i>
+                        <div class="h3 mb-1 fw-bold text-danger">
+                          {{ status_counts.disbanded }}
+                        </div>
+                        <small class="text-muted fw-semibold"
+                          >Распущенных</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="card h-100 border-0 bg-info bg-opacity-10">
+                    <div
+                      class="card-body d-flex align-items-center justify-content-center"
+                    >
+                      <div class="text-center">
+                        <i class="fas fa-users text-info fs-1 mb-2"></i>
+                        <div class="h3 mb-1 fw-bold text-info">
+                          {{ teams|length }}
+                        </div>
+                        <small class="text-muted fw-semibold"
+                          >Всего команд</small
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Фильтрация по статусу с улучшенным Bootstrap 5.3 дизайном -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <div class="d-flex align-items-center me-3">
+                  <i class="fas fa-filter text-muted me-2"></i>
+                  <span class="fw-bold text-dark">Фильтр по статусу:</span>
+                </div>
+                <div
+                  class="btn-group"
+                  role="group"
+                  aria-label="Фильтр команд по статусу"
+                >
+                  <a
+                    href="?status=all"
+                    class="btn {% if current_status_filter == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %} shadow-sm"
+                  >
+                    <i class="fas fa-list me-1"></i>Все команды
+                    <span class="badge rounded-pill text-bg-light ms-2"
+                      >{{ teams|length }}</span
+                    >
+                  </a>
+                  <a
+                    href="?status=active"
+                    class="btn {% if current_status_filter == 'active' %}btn-success{% else %}btn-outline-success{% endif %} shadow-sm"
+                  >
+                    <i class="fas fa-check-circle me-1"></i>Активные
+                    <span class="badge rounded-pill text-bg-light ms-2"
+                      >{{ status_counts.active }}</span
+                    >
+                  </a>
+                  <a
+                    href="?status=inactive"
+                    class="btn {% if current_status_filter == 'inactive' %}btn-warning{% else %}btn-outline-warning{% endif %} shadow-sm"
+                  >
+                    <i class="fas fa-pause-circle me-1"></i>Приостановленные
+                    <span class="badge rounded-pill text-bg-light ms-2"
+                      >{{ status_counts.inactive }}</span
+                    >
+                  </a>
+                  <a
+                    href="?status=disbanded"
+                    class="btn {% if current_status_filter == 'disbanded' %}btn-danger{% else %}btn-outline-danger{% endif %} shadow-sm"
+                  >
+                    <i class="fas fa-times-circle me-1"></i>Распущенные
+                    <span class="badge rounded-pill text-bg-light ms-2"
+                      >{{ status_counts.disbanded }}</span
+                    >
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Отладочная информация (только для Django админов) -->
+      {% if debug and user.is_staff %}
+      <div class="alert alert-info">
+        <strong>Отладка:</strong> 
+        Пользователь: {{ user.username|default:"Не аутентифицирован" }} | 
+        Команд найдено: {{ teams|length }} | 
+        Django работает: ✅
+      </div>
+      {% endif %}
+
+      {% if teams %}
+      <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+        {% for team in teams %}
+        <div class="col">
+          <div
+            class="card h-100 shadow-sm border-0"
+            style="transition: all 0.15s ease-in-out"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 0.5rem 1rem rgba(0, 0, 0, 0.15)'"
+            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)'"
+          >
+            <div
+              class="card-header border-0 rounded-top {% if team.status == 'active' %}text-bg-success {% elif team.status == 'inactive' %}text-bg-warning {% else %}text-bg-danger{% endif %} d-flex justify-content-between align-items-center"
+            >
+              <h3 class="card-title h5 mb-0 fw-bold">
+                <a
+                  href="{% url 'teams:team_detail' team.pk %}"
+                  class="text-white text-decoration-none"
+                >
+                  <i class="fas fa-users me-2"></i>{{ team.name }}
+                </a>
+              </h3>
+              <span
+                class="badge rounded-pill text-bg-light px-3 py-2 shadow-sm"
+              >
+                <i
+                  class="fas {% if team.status == 'active' %}fa-check-circle text-success {% elif team.status == 'inactive' %}fa-pause-circle text-warning {% else %}fa-times-circle text-danger{% endif %} me-1"
+                ></i>
+                {{ team.get_status_display }}
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-user text-muted"></i>
+                  <span class="small">
+                    <stron>Создатель:</stron> 
+                    {% if team.creator %}
+                      {{ team.creator.username }}
+                    {% else %}
+                      Неизвестно
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-users text-muted"></i>
+                  <span class="small">
+                    <strong>Участников:</strong> 
+                    {% if team.members %}
+                      {{ team.members.count }}
+                    {% else %}
+                      0
+                    {% endif %}
+                  </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-calendar text-muted"></i>
+                  <span class="small">
+                    <strong>Создана:</strong> 
+                    {% if team.created_at %}
+                      {{ team.created_at|date:"d.m.Y" }}
+                    {% else %}
+                      Неизвестно
+                    {% endif %}
+                  </span>
+                </div>
+                {% if team.status != 'active' %}
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-clock text-muted"></i>
+                  <span class="small">
+                    <strong>Обновлена:</strong> 
+                    {% if team.updated_at %}
+                      {{ team.updated_at|date:"d.m.Y" }}
+                    {% else %}
+                      Неизвестно
+                    {% endif %}
+                  </span>
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Быстрые действия для руководителя команды -->
+              {% if team.creator == user and team.status != 'disbanded' %}
+              <div class="mt-3 pt-3 border-top">
+                <div class="d-flex gap-2">
+                  {% if team.status == 'active' %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning flex-fill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#quickActionModal"
+                    data-team-id="{{ team.pk }}"
+                    data-team-name="{{ team.name }}"
+                    data-action="deactivate"
+                    data-bs-toggle="tooltip"
+                    title="Приостановить команду"
+                  >
+                    <i class="fas fa-pause"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger flex-fill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#quickActionModal"
+                    data-team-id="{{ team.pk }}"
+                    data-team-name="{{ team.name }}"
+                    data-action="disband"
+                    data-bs-toggle="tooltip"
+                    title="Распустить команду"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                  {% elif team.status == 'inactive' %}
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success flex-fill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#quickActionModal"
+                    data-team-id="{{ team.pk }}"
+                    data-team-name="{{ team.name }}"
+                    data-action="reactivate"
+                    data-bs-toggle="tooltip"
+                    title="Возобновить команду"
+                  >
+                    <i class="fas fa-play"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger flex-fill"
+                    data-bs-toggle="modal"
+                    data-bs-target="#quickActionModal"
+                    data-team-id="{{ team.pk }}"
+                    data-team-name="{{ team.name }}"
+                    data-action="disband"
+                    data-bs-toggle="tooltip"
+                    title="Распустить команду"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+              {% endif %} {% if team.status != 'active' %}
+              <div class="mt-3">
+                {% if team.status == 'inactive' %}
+                <div
+                  class="alert alert-warning alert-dismissible fade show mb-0 py-2 border-0"
+                  role="alert"
+                >
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <small class="fw-semibold">Команда приостановлена</small>
+                  </div>
+                </div>
+                {% elif team.status == 'disbanded' %}
+                <div
+                  class="alert alert-danger alert-dismissible fade show mb-0 py-2 border-0"
+                  role="alert"
+                >
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <small class="fw-semibold">Команда распущена</small>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Пагинация -->
+      {% if is_paginated %}
+      <nav aria-label="Навигация по страницам" class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?{% if current_status_filter != 'all' %}status={{ current_status_filter }}&{% endif %}page=1"
+            >
+              <i class="fas fa-angle-double-left"></i> Первая
+            </a>
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?{% if current_status_filter != 'all' %}status={{ current_status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}"
+            >
+              <i class="fas fa-angle-left"></i> Предыдущая
+            </a>
+          </li>
+          {% endif %}
+
+          <li class="page-item active">
+            <span class="page-link">
+              Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages
+              }}
+            </span>
+          </li>
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?{% if current_status_filter != 'all' %}status={{ current_status_filter }}&{% endif %}page={{ page_obj.next_page_number }}"
+            >
+              Следующая <i class="fas fa-angle-right"></i>
+            </a>
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?{% if current_status_filter != 'all' %}status={{ current_status_filter }}&{% endif %}page={{ page_obj.paginator.num_pages }}"
+            >
+              Последняя <i class="fas fa-angle-double-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %} {% else %}
+      <div class="text-center py-5">
+        <i
+          class="fas fa-users text-muted opacity-50 mb-3"
+          style="font-size: 4rem"
+        ></i>
+        <h4 class="text-muted mb-3">У вас пока нет команд</h4>
+        <p class="text-muted mb-4">
+          Создайте свою первую команду для совместной работы над проектами
+        </p>
+        <a
+          href="{% url 'teams:team_create' %}"
+          class="btn btn-primary btn-lg d-flex align-items-center gap-2 mx-auto"
+          style="width: fit-content"
+        >
+          <i class="fas fa-plus"></i>Создать первую команду
+        </a>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap 5.3 модальное окно для быстрых действий -->
+<div
+  class="modal fade"
+  id="quickActionModal"
+  tabindex="-1"
+  aria-labelledby="quickActionModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="quickActionModalLabel">
+          <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+          Подтверждение действия
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Закрыть"
+        ></button>
+      </div>
+      <div class="modal-body pt-2">
+        <div
+          class="alert alert-light border-start border-4 border-warning"
+          role="alert"
+        >
+          <p id="quickActionMessage" class="mb-0"></p>
+        </div>
+        <div class="mb-3">
+          <label for="quickActionReason" class="form-label fw-semibold">
+            <i class="fas fa-comment-alt me-1 text-muted"></i>
+            Причина (необязательно):
+          </label>
+          <textarea
+            id="quickActionReason"
+            class="form-control"
+            rows="2"
+            placeholder="Укажите причину изменения статуса..."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Отмена
+        </button>
+        <button type="button" class="btn btn-primary" id="quickActionConfirm">
+          <i class="fas fa-check me-1"></i>Подтвердить
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Инициализация tooltips
+    var tooltipTriggerList = [].slice.call(
+      document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Обработка модального окна быстрых действий
+    const quickActionModal = document.getElementById("quickActionModal");
+    const quickActionMessage = document.getElementById("quickActionMessage");
+    const quickActionReason = document.getElementById("quickActionReason");
+    const quickActionConfirm = document.getElementById("quickActionConfirm");
+
+    let currentTeamId = null;
+    let currentAction = null;
+    let currentTeamName = null;
+
+    quickActionModal.addEventListener("show.bs.modal", function (event) {
+      const button = event.relatedTarget;
+      currentTeamId = button.getAttribute("data-team-id");
+      currentAction = button.getAttribute("data-action");
+      currentTeamName = button.getAttribute("data-team-name");
+
+      // Настройка сообщения и кнопки в зависимости от действия
+      let message = "";
+      let buttonClass = "btn-primary";
+      let buttonIcon = "fa-check";
+      let buttonText = "Подтвердить";
+
+      switch (currentAction) {
+        case "deactivate":
+          message = `Вы уверены, что хотите приостановить команду "${currentTeamName}"? Участники не смогут работать с проектами до возобновления.`;
+          buttonClass = "btn-warning";
+          buttonIcon = "fa-pause";
+          buttonText = "Приостановить";
+          break;
+        case "reactivate":
+          message = `Вы уверены, что хотите возобновить работу команды "${currentTeamName}"? Все участники снова получат доступ к функциям.`;
+          buttonClass = "btn-success";
+          buttonIcon = "fa-play";
+          buttonText = "Возобновить";
+          break;
+        case "disband":
+          message = `ВНИМАНИЕ! Вы собираетесь окончательно распустить команду "${currentTeamName}". Это действие необратимо!\n\nВсе участники будут исключены из команды. Продолжить?`;
+          buttonClass = "btn-danger";
+          buttonIcon = "fa-times";
+          buttonText = "Распустить";
+          break;
+      }
+
+      quickActionMessage.innerHTML = message.replace(/\n/g, "<br>");
+      quickActionConfirm.className = `btn ${buttonClass}`;
+      quickActionConfirm.innerHTML = `<i class="fas ${buttonIcon} me-1"></i>${buttonText}`;
+
+      // Очищаем поле причины
+      quickActionReason.value = "";
+    });
+
+    // Обработка подтверждения действия
+    quickActionConfirm.addEventListener("click", function () {
+      if (!currentTeamId || !currentAction) return;
+
+      // Скрываем модальное окно подтверждения
+      const modal = bootstrap.Modal.getInstance(quickActionModal);
+      modal.hide();
+
+      // Показываем toast уведомление о начале обработки
+      showToast("Обновление статуса команды...", "info", 2000);
+
+      // Выполняем AJAX запрос
+      performQuickStatusChange(
+        currentTeamId,
+        currentAction,
+        quickActionReason.value
+      );
+    });
+  });
+
+  // AJAX функция для быстрого изменения статуса команды
+  function performQuickStatusChange(teamId, action, reason) {
+    const formData = new FormData();
+    formData.append("action", action);
+    formData.append("reason", reason);
+    formData.append(
+      "csrfmiddlewaretoken",
+      document.querySelector("[name=csrfmiddlewaretoken]")?.value ||
+        document.querySelector("input[name=csrfmiddlewaretoken]")?.value ||
+        ""
+    );
+
+    fetch(`/teams/${teamId}/status/`, {
+      method: "POST",
+      body: formData,
+      headers: {
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.success) {
+          // Показываем уведомление об успехе
+          showToast(data.message, "success");
+
+          // Обновляем карточку команды в списке
+          updateTeamCardInList(
+            teamId,
+            data.team_status,
+            data.team_status_display
+          );
+
+          // Обновляем статистику
+          updateStatusStatistics();
+
+          // Обновляем счетчики в навигации
+          if (window.updateNavigationCounters) {
+            window.updateNavigationCounters();
+          }
+        } else {
+          showToast(
+            data.message || "Произошла ошибка при изменении статуса",
+            "error"
+          );
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showToast(
+          "Произошла ошибка при выполнении запроса. Попробуйте еще раз.",
+          "error"
+        );
+      });
+  }
+
+  // Функция для обновления карточки команды в списке
+  function updateTeamCardInList(teamId, status, statusDisplay) {
+    const teamCard = document
+      .querySelector(`[data-team-id="${teamId}"]`)
+      ?.closest(".card");
+    if (!teamCard) return;
+
+    // Получаем название команды из элемента с data-team-name
+    const teamNameElement = teamCard.querySelector("[data-team-name]");
+    const teamName = teamNameElement
+      ? teamNameElement.getAttribute("data-team-name")
+      : "";
+
+    // Обновляем заголовок карточки
+    const cardHeader = teamCard.querySelector(".card-header");
+    if (cardHeader) {
+      cardHeader.classList.remove(
+        "text-bg-success",
+        "text-bg-warning",
+        "text-bg-danger"
+      );
+
+      if (status === "active") {
+        cardHeader.classList.add("text-bg-success");
+      } else if (status === "inactive") {
+        cardHeader.classList.add("text-bg-warning");
+      } else {
+        cardHeader.classList.add("text-bg-danger");
+      }
+    }
+
+    // Обновляем бейдж статуса
+    const statusBadge = teamCard.querySelector(
+      ".badge.rounded-pill.text-bg-light"
+    );
+    if (statusBadge) {
+      const iconElement = statusBadge.querySelector("i");
+      if (iconElement) {
+        iconElement.className = "fas me-1 " + getStatusIconClass(status);
+      }
+      statusBadge.lastChild.textContent = " " + statusDisplay;
+    }
+
+    // Обновляем алерты в карточке
+    updateCardAlerts(teamCard, status);
+
+    // Обновляем кнопки быстрых действий
+    updateQuickActionButtons(teamCard, status, teamId, teamName);
+
+    // Добавляем анимацию обновления
+    animateElement(teamCard, "pulse");
+  }
+
+  // Функция для получения класса иконки статуса
+  function getStatusIconClass(status) {
+    switch (status) {
+      case "active":
+        return "fa-check-circle text-success";
+      case "inactive":
+        return "fa-pause-circle text-warning";
+      case "disbanded":
+        return "fa-times-circle text-danger";
+      default:
+        return "fa-question-circle";
+    }
+  }
+
+  // Функция для обновления алертов в карточке
+  function updateCardAlerts(teamCard, status) {
+    const existingAlert = teamCard.querySelector(".alert");
+
+    if (status === "active") {
+      // Удаляем алерт для активной команды
+      if (existingAlert) {
+        existingAlert.remove();
+      }
+    } else {
+      let alertHTML = "";
+      if (status === "inactive") {
+        alertHTML = `
+                <div class="alert alert-warning alert-dismissible fade show mb-0 py-2 border-0" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <small class="fw-semibold">Команда приостановлена</small>
+                    </div>
+                </div>
+            `;
+      } else if (status === "disbanded") {
+        alertHTML = `
+                <div class="alert alert-danger alert-dismissible fade show mb-0 py-2 border-0" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <small class="fw-semibold">Команда распущена</small>
+                    </div>
+                </div>
+            `;
+      }
+
+      if (alertHTML) {
+        if (existingAlert) {
+          existingAlert.outerHTML = alertHTML;
+        } else {
+          const cardBody = teamCard.querySelector(".card-body");
+          if (cardBody) {
+            cardBody.insertAdjacentHTML(
+              "beforeend",
+              `<div class="mt-3">${alertHTML}</div>`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Функция для обновления кнопок быстрых действий
+  function updateQuickActionButtons(teamCard, status, teamId, teamName) {
+    const quickActionsContainer = teamCard.querySelector(".border-top");
+    if (!quickActionsContainer) return;
+
+    let buttonsHTML = "";
+
+    if (status === "active") {
+      buttonsHTML = `
+            <button type="button" 
+                    class="btn btn-sm btn-outline-warning flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#quickActionModal"
+                    data-team-id="${teamId}"
+                    data-team-name="${teamName}"
+                    data-action="deactivate"
+                    data-bs-toggle="tooltip"
+                    title="Приостановить команду">
+                <i class="fas fa-pause"></i>
+            </button>
+            <button type="button" 
+                    class="btn btn-sm btn-outline-danger flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#quickActionModal"
+                    data-team-id="${teamId}"
+                    data-team-name="${teamName}"
+                    data-action="disband"
+                    data-bs-toggle="tooltip"
+                    title="Распустить команду">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+    } else if (status === "inactive") {
+      buttonsHTML = `
+            <button type="button" 
+                    class="btn btn-sm btn-outline-success flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#quickActionModal"
+                    data-team-id="${teamId}"
+                    data-team-name="${teamName}"
+                    data-action="reactivate"
+                    data-bs-toggle="tooltip"
+                    title="Возобновить команду">
+                <i class="fas fa-play"></i>
+            </button>
+            <button type="button" 
+                    class="btn btn-sm btn-outline-danger flex-fill" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#quickActionModal"
+                    data-team-id="${teamId}"
+                    data-team-name="${teamName}"
+                    data-action="disband"
+                    data-bs-toggle="tooltip"
+                    title="Распустить команду">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+    }
+
+    const buttonsContainer =
+      quickActionsContainer.querySelector(".d-flex.gap-2");
+    if (buttonsContainer && buttonsHTML) {
+      buttonsContainer.innerHTML = buttonsHTML;
+
+      // Переинициализируем tooltips для новых кнопок
+      const newTooltips = buttonsContainer.querySelectorAll(
+        '[data-bs-toggle="tooltip"]'
+      );
+      newTooltips.forEach(function (tooltipTriggerEl) {
+        new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+    } else if (status === "disbanded") {
+      // Скрываем контейнер с кнопками для распущенных команд
+      quickActionsContainer.style.display = "none";
+    }
+  }
+
+  // Функция для обновления статистики
+  function updateStatusStatistics() {
+    // Подсчитываем команды по статусам на основе текущих карточек
+    const teamCards = document.querySelectorAll(".card .card-header");
+    let activeCount = 0;
+    let inactiveCount = 0;
+    let disbandedCount = 0;
+
+    teamCards.forEach((header) => {
+      if (header.classList.contains("text-bg-success")) {
+        activeCount++;
+      } else if (header.classList.contains("text-bg-warning")) {
+        inactiveCount++;
+      } else if (header.classList.contains("text-bg-danger")) {
+        disbandedCount++;
+      }
+    });
+
+    // Обновляем счетчики в статистике
+    const activeCounter = document.querySelector(".text-success.h3");
+    const inactiveCounter = document.querySelector(".text-warning.h3");
+    const disbandedCounter = document.querySelector(".text-danger.h3");
+    const totalCounter = document.querySelector(".text-info.h3");
+
+    if (activeCounter) activeCounter.textContent = activeCount;
+    if (inactiveCounter) inactiveCounter.textContent = inactiveCount;
+    if (disbandedCounter) disbandedCounter.textContent = disbandedCount;
+    if (totalCounter)
+      totalCounter.textContent = activeCount + inactiveCount + disbandedCount;
+
+    // Обновляем бейджи в фильтрах
+    const filterButtons = document.querySelectorAll(".btn-group .btn .badge");
+    filterButtons.forEach((badge) => {
+      const button = badge.closest(".btn");
+      if (button.href && button.href.includes("status=active")) {
+        badge.textContent = activeCount;
+      } else if (button.href && button.href.includes("status=inactive")) {
+        badge.textContent = inactiveCount;
+      } else if (button.href && button.href.includes("status=disbanded")) {
+        badge.textContent = disbandedCount;
+      } else if (button.href && button.href.includes("status=all")) {
+        badge.textContent = activeCount + inactiveCount + disbandedCount;
+      }
+    });
+  }
+</script>
+
+{% endif %}
+{% endblock %}

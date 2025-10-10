@@ -1,15 +1,289 @@
 <!-- templates/teams/team_form.html -->
 {% extends "base.html" %}
+{% load form_tags %}
 
 {% block title %}Создать новую команду{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <h2>Создание новой команды</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary" style="width: 100%;">Создать</button>
-    </form>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <!-- Bootstrap 5.3 Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb bg-light rounded px-3 py-2 shadow-sm">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'teams:team_list' %}" class="text-decoration-none">
+                            <i class="fas fa-users me-1"></i>Команды
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active fw-semibold" aria-current="page">
+                        <i class="fas fa-plus me-1"></i>Создание команды
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header text-bg-primary border-0 py-4">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white bg-opacity-20 rounded-circle p-3 me-3">
+                            <i class="fas fa-users text-white fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="card-title h4 mb-1 fw-bold text-white">Создание новой команды</h2>
+                            <p class="mb-0 text-white-50">Создайте команду для совместной работы над проектами</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="teamCreateForm" onsubmit="return handleFormSubmit(event)">
+                        {% csrf_token %}
+                        
+                        <!-- Bootstrap 5.3 Alert для информации -->
+                        <div class="alert alert-info border-0 shadow-sm mb-4" role="alert">
+                            <div class="d-flex align-items-start">
+                                <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3 mt-1">
+                                    <i class="fas fa-info-circle text-info"></i>
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading fw-bold mb-2">Что нужно знать</h6>
+                                    <ul class="mb-0 ps-3">
+                                        <li>Вы автоматически станете руководителем команды</li>
+                                        <li>Название должно быть уникальным среди ваших команд</li>
+                                        <li>Позже вы сможете пригласить участников</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% for field in form %}
+                            <div class="mb-4">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-semibold fs-5">
+                                    <i class="fas fa-tag me-2 text-muted"></i>{{ field.label }}
+                                </label>
+                                {{ field|add_class:"form-control form-control-lg" }}
+                                {% if field.help_text %}
+                                    <div class="form-text mt-2">
+                                        <i class="fas fa-lightbulb me-1 text-muted"></i>{{ field.help_text }}
+                                    </div>
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger mt-2">
+                                        {% for error in field.errors %}
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                                <small>{{ error }}</small>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <div class="d-flex gap-3 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg flex-fill shadow-sm" id="submitBtn">
+                                <i class="fas fa-plus me-2"></i>
+                                <span id="submitText">Создать команду</span>
+                                <div class="spinner-border spinner-border-sm ms-2 d-none" role="status" id="submitSpinner">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </button>
+                            <a href="{% url 'teams:team_list' %}" class="btn btn-outline-secondary btn-lg shadow-sm">
+                                <i class="fas fa-times me-2"></i>Отмена
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Дополнительная информация -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-0 bg-light">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold mb-3">
+                                <i class="fas fa-question-circle me-2 text-primary"></i>
+                                Часто задаваемые вопросы
+                            </h6>
+                            <div class="accordion accordion-flush" id="faqAccordion">
+                                <div class="accordion-item bg-transparent border-0">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed bg-transparent border-0 shadow-none" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#faq1">
+                                            Можно ли изменить название команды?
+                                        </button>
+                                    </h2>
+                                    <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body pt-0">
+                                            Да, название команды можно изменить в настройках команды после создания.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="accordion-item bg-transparent border-0">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed bg-transparent border-0 shadow-none" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#faq2">
+                                            Сколько участников может быть в команде?
+                                        </button>
+                                    </h2>
+                                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body pt-0">
+                                            В команде может быть неограниченное количество участников.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- Bootstrap 5.3 Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 text-bg-success">
+                <h5 class="modal-title fw-bold" id="successModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Команда создана успешно!
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px;">
+                        <i class="fas fa-users text-success" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+                <h6 class="fw-bold mb-2">Поздравляем!</h6>
+                <p class="text-muted mb-0">Ваша команда "<span id="teamNameDisplay"></span>" успешно создана. Теперь вы можете пригласить участников и начать работу над проектами.</p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-success btn-lg" id="goToTeamBtn">
+                    <i class="fas fa-arrow-right me-2"></i>Перейти к команде
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Обработка отправки формы с Bootstrap 5.3 модальными окнами
+function handleFormSubmit(event) {
+    const form = event.target;
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    
+    // Показываем индикатор загрузки
+    submitBtn.disabled = true;
+    submitText.textContent = 'Создание команды...';
+    submitSpinner.classList.remove('d-none');
+    
+    // Добавляем анимацию к форме
+    form.style.opacity = '0.7';
+    form.style.pointerEvents = 'none';
+    
+    return true; // Позволяем форме отправиться
+}
+
+// Обработка успешного создания команды
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, есть ли сообщение об успехе в URL или сессии
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    
+    if (success === 'created') {
+        const teamName = urlParams.get('team_name') || 'Новая команда';
+        const teamId = urlParams.get('team_id');
+        
+        showSuccessModal(teamName, teamId);
+    }
+    
+    // Валидация формы в реальном времени
+    const nameInput = document.querySelector('input[name="name"]');
+    if (nameInput) {
+        nameInput.addEventListener('input', function() {
+            validateTeamName(this);
+        });
+    }
+});
+
+function showSuccessModal(teamName, teamId) {
+    document.getElementById('teamNameDisplay').textContent = teamName;
+    
+    const goToTeamBtn = document.getElementById('goToTeamBtn');
+    if (teamId) {
+        goToTeamBtn.onclick = function() {
+            window.location.href = `/teams/${teamId}/`;
+        };
+    }
+    
+    const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+    successModal.show();
+}
+
+function validateTeamName(input) {
+    const value = input.value.trim();
+    const feedback = input.parentElement.querySelector('.invalid-feedback') || 
+                    document.createElement('div');
+    
+    // Удаляем предыдущие классы валидации
+    input.classList.remove('is-valid', 'is-invalid');
+    
+    if (value.length === 0) {
+        return; // Не показываем ошибку для пустого поля
+    }
+    
+    if (value.length < 3) {
+        input.classList.add('is-invalid');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = 'Название должно содержать минимум 3 символа';
+        if (!input.parentElement.contains(feedback)) {
+            input.parentElement.appendChild(feedback);
+        }
+    } else if (value.length > 100) {
+        input.classList.add('is-invalid');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = 'Название не может быть длиннее 100 символов';
+        if (!input.parentElement.contains(feedback)) {
+            input.parentElement.appendChild(feedback);
+        }
+    } else if (!/^[a-zA-Zа-яА-Я0-9\s\-_]+$/.test(value)) {
+        input.classList.add('is-invalid');
+        feedback.className = 'invalid-feedback';
+        feedback.textContent = 'Название может содержать только буквы, цифры, пробелы, дефисы и подчеркивания';
+        if (!input.parentElement.contains(feedback)) {
+            input.parentElement.appendChild(feedback);
+        }
+    } else {
+        input.classList.add('is-valid');
+        if (input.parentElement.contains(feedback)) {
+            feedback.remove();
+        }
+    }
+}
+
+// Анимация появления элементов
+document.addEventListener('DOMContentLoaded', function() {
+    const card = document.querySelector('.card');
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100);
+    }
+});
+</script>
+
 {% endblock %}

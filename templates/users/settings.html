@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки аккаунта{% endblock %}
+
+{% block content %}
+<!-- Интегрируем user_header компонент -->
+{% include "users/components/user_header.html" %}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="fas fa-cog me-2 text-primary"></i>Настройки аккаунта
+                </h1>
+                <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Назад к дашборду
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Навигация по разделам настроек -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <ul class="nav nav-pills nav-fill" id="settings-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="account-tab" data-bs-toggle="pill" 
+                                    data-bs-target="#account" type="button" role="tab">
+                                <i class="fas fa-user me-1"></i>Аккаунт
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="security-tab" data-bs-toggle="pill" 
+                                    data-bs-target="#security" type="button" role="tab">
+                                <i class="fas fa-shield-alt me-1"></i>Безопасность
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="notifications-tab" data-bs-toggle="pill" 
+                                    data-bs-target="#notifications" type="button" role="tab">
+                                <i class="fas fa-bell me-1"></i>Уведомления
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tab-content" id="settings-content">
+                <!-- Раздел: Настройки аккаунта -->
+                <div class="tab-pane fade show active" id="account" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-user me-2"></i>Профиль и настройки аккаунта
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            {% if messages %}
+                                {% for message in messages %}
+                                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                        {{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+                            <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="profile">
+                                
+                                <!-- Аватарка пользователя -->
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-image me-1"></i>Аватарка профиля
+                                        </h6>
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3">
+                                                {% load form_tags %}
+                                                {% user_avatar user size="80" css_class="border shadow-sm" %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="mb-2">
+                                                    <label for="id_avatar" class="form-label">Загрузить новую аватарку</label>
+                                                    <input type="file" class="form-control" id="id_avatar" name="avatar" accept="image/jpeg,image/png">
+                                                </div>
+                                                <div class="form-text">
+                                                    Поддерживаются JPG и PNG файлы размером до 2MB. Изображение будет автоматически обрезано до 200x200px.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_display_name" class="form-label fw-bold">
+                                                <i class="fas fa-id-card me-1"></i>Отображаемое имя
+                                            </label>
+                                            <input type="text" class="form-control" id="id_display_name" name="display_name" 
+                                                   value="{{ user.display_name|default:'' }}" maxlength="100">
+                                            <div class="form-text">
+                                                Имя, которое будут видеть другие пользователи
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="id_email" class="form-label fw-bold">
+                                                <i class="fas fa-envelope me-1"></i>Email адрес
+                                            </label>
+                                            <input type="email" class="form-control" id="id_email" name="email" 
+                                                   value="{{ user.email|default:'' }}" required>
+                                            <div class="form-text">
+                                                Используется для входа и восстановления пароля
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">
+                                                <i class="fas fa-user me-1"></i>Имя пользователя
+                                            </label>
+                                            <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                                            <div class="form-text">
+                                                Имя пользователя нельзя изменить
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Информация об аккаунте -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-info-circle me-1"></i>Информация об аккаунте
+                                                </h6>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1">
+                                                            <strong>Дата регистрации:</strong> {{ user.date_joined|date:"d.m.Y H:i" }}
+                                                        </p>
+                                                        <p class="mb-1">
+                                                            <strong>Последний вход:</strong> 
+                                                            {% if user.last_login %}
+                                                                {{ user.last_login|date:"d.m.Y H:i" }}
+                                                            {% else %}
+                                                                Никогда
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <p class="mb-1">
+                                                            <strong>Статус аккаунта:</strong> 
+                                                            {% if user.is_active %}
+                                                                <span class="badge bg-success">Активен</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Заблокирован</span>
+                                                            {% endif %}
+                                                        </p>
+                                                        <p class="mb-1">
+                                                            <strong>Email подтвержден:</strong> 
+                                                            {% if user.email %}
+                                                                <span class="badge bg-success">Да</span>
+                                                            {% else %}
+                                                                <span class="badge bg-warning">Не указан</span>
+                                                            {% endif %}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save me-1"></i>Сохранить изменения
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="location.reload()">
+                                            <i class="fas fa-undo me-1"></i>Отменить
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Раздел: Безопасность -->
+                <div class="tab-pane fade" id="security" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-warning text-dark">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>Безопасность и пароль
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="password">
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ password_form.old_password.id_for_label }}" class="form-label fw-bold">
+                                                <i class="fas fa-lock me-1"></i>Текущий пароль
+                                            </label>
+                                            {{ password_form.old_password }}
+                                            {% if password_form.old_password.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ password_form.old_password.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ password_form.new_password1.id_for_label }}" class="form-label fw-bold">
+                                                <i class="fas fa-key me-1"></i>Новый пароль
+                                            </label>
+                                            {{ password_form.new_password1 }}
+                                            {% if password_form.new_password1.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ password_form.new_password1.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                Пароль должен содержать минимум 8 символов
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ password_form.new_password2.id_for_label }}" class="form-label fw-bold">
+                                                <i class="fas fa-key me-1"></i>Подтверждение пароля
+                                            </label>
+                                            {{ password_form.new_password2 }}
+                                            {% if password_form.new_password2.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ password_form.new_password2.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="form-text">
+                                                Повторите новый пароль
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Рекомендации по безопасности -->
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="card bg-light">
+                                            <div class="card-body">
+                                                <h6 class="card-title">
+                                                    <i class="fas fa-lightbulb me-1 text-warning"></i>Рекомендации по безопасности
+                                                </h6>
+                                                <ul class="mb-0 small">
+                                                    <li>Используйте уникальный пароль, который вы не используете на других сайтах</li>
+                                                    <li>Пароль должен содержать буквы, цифры и специальные символы</li>
+                                                    <li>Не сообщайте свой пароль другим людям</li>
+                                                    <li>Регулярно меняйте пароль (рекомендуется каждые 3-6 месяцев)</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fas fa-key me-1"></i>Изменить пароль
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2" onclick="this.form.reset()">
+                                            <i class="fas fa-undo me-1"></i>Очистить
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Раздел: Уведомления -->
+                <div class="tab-pane fade" id="notifications" role="tabpanel">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h4 class="card-title mb-0">
+                                <i class="fas fa-bell me-2"></i>Настройки уведомлений
+                            </h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="notifications">
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-3">Email уведомления</h6>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-tasks" checked>
+                                            <label class="form-check-label" for="notify-tasks">
+                                                <strong>Новые задачи</strong>
+                                                <div class="form-text">Получать уведомления о назначенных задачах</div>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-teams" checked>
+                                            <label class="form-check-label" for="notify-teams">
+                                                <strong>Изменения статуса команды</strong>
+                                                <div class="form-text">Получать уведомления об изменении статуса команд</div>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-invitations" checked>
+                                            <label class="form-check-label" for="notify-invitations">
+                                                <strong>Приглашения в команды</strong>
+                                                <div class="form-text">Получать уведомления о приглашениях в команды</div>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-projects">
+                                            <label class="form-check-label" for="notify-projects">
+                                                <strong>Обновления проектов</strong>
+                                                <div class="form-text">Получать уведомления об изменениях в проектах</div>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-comments">
+                                            <label class="form-check-label" for="notify-comments">
+                                                <strong>Комментарии и упоминания</strong>
+                                                <div class="form-text">Получать уведомления о комментариях и упоминаниях</div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-3">Системные уведомления</h6>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-security" checked disabled>
+                                            <label class="form-check-label" for="notify-security">
+                                                <strong>Безопасность аккаунта</strong>
+                                                <div class="form-text">Критически важные уведомления (нельзя отключить)</div>
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="form-check mb-3">
+                                            <input class="form-check-input" type="checkbox" id="notify-updates">
+                                            <label class="form-check-label" for="notify-updates">
+                                                <strong>Обновления системы</strong>
+                                                <div class="form-text">Информация о новых функциях и обновлениях</div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-info">
+                                            <i class="fas fa-bell me-1"></i>Сохранить настройки уведомлений
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary ms-2">
+                                            <i class="fas fa-undo me-1"></i>По умолчанию
+                                        </button>
+                                        <a href="{% url 'notifications:preferences' %}" class="btn btn-outline-info ms-2">
+                                            <i class="fas fa-cogs me-1"></i>Детальные настройки
+                                        </a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Валидация форм
+    const forms = document.querySelectorAll('.needs-validation');
+    forms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!form.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+    
+    // Проверка совпадения паролей
+    const newPassword1 = document.querySelector('input[name="new_password1"]');
+    const newPassword2 = document.querySelector('input[name="new_password2"]');
+    
+    if (newPassword1 && newPassword2) {
+        function checkPasswordMatch() {
+            if (newPassword1.value && newPassword2.value) {
+                if (newPassword1.value !== newPassword2.value) {
+                    newPassword2.setCustomValidity('Пароли не совпадают');
+                } else {
+                    newPassword2.setCustomValidity('');
+                }
+            }
+        }
+        
+        newPassword1.addEventListener('input', checkPasswordMatch);
+        newPassword2.addEventListener('input', checkPasswordMatch);
+    }
+    
+    // Сохранение состояния табов
+    const tabButtons = document.querySelectorAll('#settings-tabs button');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(e) {
+            localStorage.setItem('activeSettingsTab', e.target.id);
+        });
+    });
+    
+    // Восстановление активного таба
+    const activeTab = localStorage.getItem('activeSettingsTab');
+    if (activeTab) {
+        const tabButton = document.getElementById(activeTab);
+        if (tabButton) {
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+{{ title }} - {{ site_name }}
+
+Здравствуйте, {{ recipient.username }}!
+
+{{ title }}
+
+{{ message }}
+
+---
+Это автоматическое уведомление от {{ site_name }}.

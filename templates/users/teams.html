@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Мои команды{% endblock %}
+
+{% block content %}
+<!-- Интегрируем user_header компонент -->
+{% include "users/components/user_header.html" %}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h2 mb-0">
+                    <i class="fas fa-users me-2 text-primary"></i>Мои команды
+                </h1>
+                <div>
+                    <a href="{% url 'users:dashboard' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Назад
+                    </a>
+                    <a href="{% url 'teams:team_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Создать команду
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if user_teams %}
+        <div class="row g-4">
+            {% for membership in user_teams %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card h-100 shadow-sm border-0" 
+                         style="transition: all 0.15s ease-in-out;"
+                         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 0.5rem 1rem rgba(0, 0, 0, 0.15)'"
+                         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 0.125rem 0.25rem rgba(0, 0, 0, 0.075)'"
+                        <div class="card-header bg-primary text-white"
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-users me-2"></i>{{ membership.team.name }}
+                                </h5>
+                                <span class="badge bg-light text-primary">
+                                    {{ membership.get_role_display }}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            {% if membership.team.description %}
+                                <p class="card-text text-muted mb-3">
+                                    {{ membership.team.description|truncatewords:15 }}
+                                </p>
+                            {% else %}
+                                <p class="card-text text-muted mb-3 fst-italic">
+                                    Описание команды не указано
+                                </p>
+                            {% endif %}
+                            
+                            <!-- Статистика команды -->
+                            <div class="row text-center mb-3">
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <h6 class="text-primary mb-0">{{ membership.team.members.count }}</h6>
+                                        <small class="text-muted">Участник{{ membership.team.members.count|pluralize:"ов" }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border-end">
+                                        <h6 class="text-success mb-0">{{ membership.team.projects.count|default:0 }}</h6>
+                                        <small class="text-muted">Проект{{ membership.team.projects.count|pluralize:"ов" }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <h6 class="text-warning mb-0">
+                                        {% if membership.team.projects.all %}
+                                            {{ membership.team.projects.all.0.tasks.count|default:0 }}
+                                        {% else %}
+                                            0
+                                        {% endif %}
+                                    </h6>
+                                    <small class="text-muted">Задач</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Информация о роли -->
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-user-tag me-1"></i>
+                                    Ваша роль: <strong>{{ membership.get_role_display }}</strong>
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Присоединились: {{ membership.joined_at|date:"d.m.Y" }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% url 'teams:team_detail' pk=membership.team.pk %}" 
+                                   class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye me-1"></i>Подробнее
+                                </a>
+                                
+                                {% if membership.role == 'admin' or membership.role == 'owner' %}
+                                    <div class="btn-group" role="group">
+                                        <a href="#" class="btn btn-outline-secondary btn-sm" 
+                                           title="Настройки команды">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                        <a href="#" class="btn btn-outline-info btn-sm" 
+                                           title="Участники">
+                                            <i class="fas fa-users"></i>
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {{ membership.role|capfirst }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Пагинация, если команд много -->
+        {% if user_teams|length > 6 %}
+            <div class="row mt-4">
+                <div class="col-12">
+                    <nav aria-label="Навигация по командам">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item disabled">
+                                <span class="page-link">Предыдущая</span>
+                            </li>
+                            <li class="page-item active">
+                                <span class="page-link">1</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">Следующая</span>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        {% endif %}
+        
+    {% else %}
+        <!-- Пустое состояние -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-users fa-4x text-muted"></i>
+                        </div>
+                        <h3 class="text-muted mb-3">У вас пока нет команд</h3>
+                        <p class="text-muted mb-4">
+                            Создайте свою первую команду или попросите коллег пригласить вас в существующую команду.
+                        </p>
+                        <div class="d-flex justify-content-center gap-2">
+                            <a href="{% url 'teams:team_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Создать команду
+                            </a>
+                            <a href="{% url 'teams:team_list' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-search me-1"></i>Найти команды
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Дополнительная информация -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light border-0">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-lightbulb me-2 text-warning"></i>Полезные советы
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="text-primary">
+                                <i class="fas fa-crown me-1"></i>Владелец команды
+                            </h6>
+                            <p class="small text-muted">
+                                Может управлять всеми настройками команды, добавлять и удалять участников.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-success">
+                                <i class="fas fa-user-shield me-1"></i>Администратор
+                            </h6>
+                            <p class="small text-muted">
+                                Может управлять проектами, назначать задачи и приглашать новых участников.
+                            </p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6 class="text-info">
+                                <i class="fas fa-user me-1"></i>Участник
+                            </h6>
+                            <p class="small text-muted">
+                                Может работать над задачами и просматривать информацию о команде.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}

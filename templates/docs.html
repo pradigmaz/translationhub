@@ -1,0 +1,72 @@
+<!-- templates/docs.html -->
+{% extends 'base.html' %}
+
+{% block title %}Документация - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-info text-white">
+                    <h2 class="card-title h4 mb-0">
+                        <i class="fas fa-book me-2"></i>Документация TranslationHub
+                    </h2>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <h3 class="h5 text-primary mb-3">
+                            <i class="fas fa-play-circle me-2"></i>Начало работы
+                        </h3>
+                        <p class="mb-3">TranslationHub - это профессиональная платформа для управления переводческими проектами и командной работы.</p>
+                        
+                        <h4 class="h6 text-secondary mb-2">Основные возможности:</h4>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Управление проектами</strong> - создавайте и отслеживайте переводческие проекты
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Командная работа</strong> - объединяйтесь в команды для совместной работы
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Глоссарии</strong> - создавайте и используйте терминологические базы
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                <strong>Система уведомлений</strong> - получайте уведомления о важных событиях
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="h5 text-primary mb-3">
+                            <i class="fas fa-rocket me-2"></i>Как начать
+                        </h3>
+                        <ol class="list-group list-group-numbered list-group-flush">
+                            <li class="list-group-item border-0 px-0">Зарегистрируйтесь на платформе</li>
+                            <li class="list-group-item border-0 px-0">Создайте свой первый проект или присоединитесь к команде</li>
+                            <li class="list-group-item border-0 px-0">Настройте глоссарий для вашего проекта</li>
+                            <li class="list-group-item border-0 px-0">Начните работу над переводом</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h3 class="h5 text-primary mb-3">
+                            <i class="fas fa-life-ring me-2"></i>Поддержка
+                        </h3>
+                        <p class="mb-0">Если у вас возникли вопросы или проблемы, обратитесь к нашей службе поддержки.</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent text-center">
+                    <a href="{% url 'main_page' %}" class="btn btn-primary d-flex align-items-center gap-2 mx-auto" style="width: fit-content;">
+                        <i class="fas fa-home"></i>На главную
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

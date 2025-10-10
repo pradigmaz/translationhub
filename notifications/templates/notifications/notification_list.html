@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Уведомления{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-bell me-2"></i>Уведомления</h1>
+                
+                <div class="d-flex gap-2">
+                    {% if unread_count > 0 %}
+                    <form method="post" action="{% url 'notifications:mark_all_read' %}" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-check-double me-1"></i>
+                            Отметить все как прочитанные
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    <a href="{% url 'notifications:preferences' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-cog me-1"></i>Настройки
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Статистика -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-bg-primary">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ unread_count }}</h5>
+                            <p class="card-text">Непрочитанных</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-bg-info">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">{{ total_count }}</h5>
+                            <p class="card-text">Всего уведомлений</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Фильтры -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="status" class="form-label">Статус:</label>
+                            <select name="status" id="status" class="form-select">
+                                <option value="all" {% if current_status_filter == 'all' %}selected{% endif %}>Все</option>
+                                <option value="unread" {% if current_status_filter == 'unread' %}selected{% endif %}>Непрочитанные</option>
+                                <option value="read" {% if current_status_filter == 'read' %}selected{% endif %}>Прочитанные</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Тип:</label>
+                            <select name="type" id="type" class="form-select">
+                                <option value="all" {% if current_type_filter == 'all' %}selected{% endif %}>Все типы</option>
+                                <option value="team_deactivated" {% if current_type_filter == 'team_deactivated' %}selected{% endif %}>Команда приостановлена</option>
+                                <option value="team_reactivated" {% if current_type_filter == 'team_reactivated' %}selected{% endif %}>Команда возобновлена</option>
+                                <option value="team_disbanded" {% if current_type_filter == 'team_disbanded' %}selected{% endif %}>Команда распущена</option>
+                                <option value="team_invitation" {% if current_type_filter == 'team_invitation' %}selected{% endif %}>Приглашение в команду</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter me-1"></i>Применить фильтры
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Список уведомлений -->
+            {% if notifications %}
+                <div class="list-group">
+                    {% for notification in notifications %}
+                    <div class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <span class="badge rounded-pill me-2
+                                        {% if notification.notification_type == 'team_deactivated' %}text-bg-warning
+                                        {% elif notification.notification_type == 'team_reactivated' %}text-bg-success
+                                        {% elif notification.notification_type == 'team_disbanded' %}text-bg-danger
+                                        {% else %}text-bg-info{% endif %}">
+                                        <i class="fas 
+                                            {% if notification.notification_type == 'team_deactivated' %}fa-pause
+                                            {% elif notification.notification_type == 'team_reactivated' %}fa-play
+                                            {% elif notification.notification_type == 'team_disbanded' %}fa-times
+                                            {% else %}fa-bell{% endif %} me-1"></i>
+                                        {{ notification.get_notification_type_display }}
+                                    </span>
+                                    
+                                    {% if not notification.is_read %}
+                                        <span class="badge text-bg-primary">Новое</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <p class="mb-1">{{ notification.message }}</p>
+                                
+                                <small class="text-body-secondary">
+                                    <i class="fas fa-clock me-1"></i>
+                                    {{ notification.created_at|date:"d.m.Y H:i" }}
+                                    {% if notification.is_read %}
+                                        • Прочитано {{ notification.read_at|date:"d.m.Y H:i" }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            
+                            <div class="ms-3">
+                                {% if not notification.is_read %}
+                                <form method="post" action="{% url 'notifications:mark_read' notification.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Отметить как прочитанное">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Пагинация -->
+                {% if is_paginated %}
+                <nav aria-label="Навигация по уведомлениям" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Первая</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Предыдущая</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Следующая</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}{% if request.GET.type %}&type={{ request.GET.type }}{% endif %}">Последняя</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info text-center" role="alert">
+                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                    <h4>Уведомлений нет</h4>
+                    <p class="mb-0">У вас пока нет уведомлений с выбранными фильтрами.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

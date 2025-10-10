@@ -136,3 +136,12 @@ static_root/
 *.md
 
 *.example
+
+.kiro/
+
+docs/
+
+*.pdf
+
+teams/locale/
+teams/migrations/

@@ -6,7 +6,7 @@ from django.urls import path
 # `as auth_views` - это псевдоним для удобства.
 from django.contrib.auth import views as auth_views
 # Импортируется собственный класс RegisterView из файла views.py.
-from .views import RegisterView, DashboardView
+from .views import RegisterView, DashboardView, ProfileView, ProfileEditView, TeamsView, TasksView, SettingsView
 
 # app_name определяет "пространство имен" для этих URL-ов.
 # Это позволяет однозначно ссылаться на них, например: {% url 'users:login' %}.
@@ -24,5 +24,12 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     # Маршрут для страницы регистрации. Используется собственный RegisterView.
     path('register/', RegisterView.as_view(), name='register'),
-    path('dashboard/', DashboardView.as_view(), name='dashboard')
+    
+    # Маршруты личного кабинета
+    path('dashboard/', DashboardView.as_view(), name='dashboard'),
+    path('profile/', ProfileView.as_view(), name='profile'),
+    path('profile/edit/', ProfileEditView.as_view(), name='profile_edit'),
+    path('teams/', TeamsView.as_view(), name='teams'),
+    path('tasks/', TasksView.as_view(), name='tasks'),
+    path('settings/', SettingsView.as_view(), name='settings'),
 ]

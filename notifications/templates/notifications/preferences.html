@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}Настройки уведомлений{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header text-bg-primary">
+                    <h1 class="card-title h4 mb-0">
+                        <i class="fas fa-cog me-2"></i>Настройки уведомлений
+                    </h1>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Email уведомления -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-envelope me-2"></i>Email уведомления
+                                </h5>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_team_status_changes" 
+                                           name="email_team_status_changes" {% if preferences.email_team_status_changes %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_team_status_changes">
+                                        <strong>Изменения статуса команды</strong>
+                                        <div class="form-text">Получать email при приостановке, возобновлении или роспуске команды</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_team_invitations" 
+                                           name="email_team_invitations" {% if preferences.email_team_invitations %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_team_invitations">
+                                        <strong>Приглашения в команды</strong>
+                                        <div class="form-text">Получать email о приглашениях в команды</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_task_assignments" 
+                                           name="email_task_assignments" {% if preferences.email_task_assignments %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_task_assignments">
+                                        <strong>Назначение задач</strong>
+                                        <div class="form-text">Получать email о назначенных задачах</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_project_updates" 
+                                           name="email_project_updates" {% if preferences.email_project_updates %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_project_updates">
+                                        <strong>Обновления проектов</strong>
+                                        <div class="form-text">Получать email об изменениях в проектах</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email_comment_mentions" 
+                                           name="email_comment_mentions" {% if preferences.email_comment_mentions %}checked{% endif %}>
+                                    <label class="form-check-label" for="email_comment_mentions">
+                                        <strong>Комментарии и упоминания</strong>
+                                        <div class="form-text">Получать email о комментариях и упоминаниях</div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Веб уведомления -->
+                            <div class="col-md-6">
+                                <h5 class="mb-3">
+                                    <i class="fas fa-bell me-2"></i>Веб уведомления
+                                </h5>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="web_team_status_changes" 
+                                           name="web_team_status_changes" {% if preferences.web_team_status_changes %}checked{% endif %}>
+                                    <label class="form-check-label" for="web_team_status_changes">
+                                        <strong>Изменения статуса команды</strong>
+                                        <div class="form-text">Показывать уведомления в интерфейсе при изменении статуса команды</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="web_team_invitations" 
+                                           name="web_team_invitations" {% if preferences.web_team_invitations %}checked{% endif %}>
+                                    <label class="form-check-label" for="web_team_invitations">
+                                        <strong>Приглашения в команды</strong>
+                                        <div class="form-text">Показывать уведомления о приглашениях в команды</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="web_task_assignments" 
+                                           name="web_task_assignments" {% if preferences.web_task_assignments %}checked{% endif %}>
+                                    <label class="form-check-label" for="web_task_assignments">
+                                        <strong>Назначение задач</strong>
+                                        <div class="form-text">Показывать уведомления о назначенных задачах</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="web_project_updates" 
+                                           name="web_project_updates" {% if preferences.web_project_updates %}checked{% endif %}>
+                                    <label class="form-check-label" for="web_project_updates">
+                                        <strong>Обновления проектов</strong>
+                                        <div class="form-text">Показывать уведомления об изменениях в проектах</div>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="web_comment_mentions" 
+                                           name="web_comment_mentions" {% if preferences.web_comment_mentions %}checked{% endif %}>
+                                    <label class="form-check-label" for="web_comment_mentions">
+                                        <strong>Комментарии и упоминания</strong>
+                                        <div class="form-text">Показывать уведомления о комментариях и упоминаниях</div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'notifications:notification_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Назад к уведомлениям
+                            </a>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Сохранить настройки
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="alert alert-info mt-4" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Информация:</strong> Изменения настроек применяются только к новым уведомлениям. 
+                Уже отправленные уведомления не изменятся.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

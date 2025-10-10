@@ -1,0 +1,14 @@
+{% comment %}
+Компонент для отображения аватарки пользователя с заглушкой Font Awesome
+{% endcomment %}
+
+{% if avatar_url %}
+    <img src="{{ avatar_url }}" 
+         alt="Аватарка {{ user.display_name|default:user.username }}" 
+         class="rounded-circle {{ css_class }}" 
+         style="width: {{ size }}px; height: {{ size }}px; object-fit: cover;">
+{% else %}
+    <i class="fas fa-user-circle {{ css_class }}" 
+       style="font-size: {{ size }}px; color: #6c757d;" 
+       title="Аватарка {{ user.display_name|default:user.username }}"></i>
+{% endif %}

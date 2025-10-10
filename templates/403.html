@@ -9,20 +9,16 @@
             <h1 style="font-size: 8rem; color: #ffc107; margin: 0;">403</h1>
             <h2 style="font-size: 2rem; margin: 20px 0; color: var(--text-color);">Доступ запрещен</h2>
             <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">
-                У вас нет прав для просмотра этой страницы.
+                У вас нет прав для доступа к этой странице.
             </p>
             <p style="color: #666;">
-                Возможно, вам нужно войти в систему или вы пытаетесь получить доступ к чужим данным.
+                Если вы считаете, что это ошибка, обратитесь к администратору.
             </p>
             <div style="margin-top: 40px;">
                 <a href="{% url 'main_page' %}" class="btn btn-primary" style="margin-right: 10px;">
                     На главную
                 </a>
-                {% if not user.is_authenticated %}
-                <a href="{% url 'users:login' %}" class="btn btn-secondary">
-                    Войти в систему
-                </a>
-                {% else %}
+                {% if user.is_authenticated %}
                 <a href="{% url 'users:dashboard' %}" class="btn btn-secondary">
                     В личный кабинет
                 </a>

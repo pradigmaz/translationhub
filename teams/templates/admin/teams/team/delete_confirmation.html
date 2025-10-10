@@ -1,0 +1,417 @@
+{% extends "admin/base_site.html" %} {% load i18n admin_urls static admin_modify
+%} {% block extrahead %} {{ block.super }}
+<link
+  rel="stylesheet"
+  type="text/css"
+  href="{% static 'admin/css/teams_dark_theme.css' %}"
+/>
+{% endblock %} {% block title %}{{ title }} | {{ site_title|default:_('Django
+site admin') }}{% endblock %} {% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+  &rsaquo;
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}"
+    >{{ opts.app_config.verbose_name }}</a
+  >
+  &rsaquo;
+  <a href="{% url 'admin:teams_team_changelist' %}"
+    >{{ opts.verbose_name_plural|capfirst }}</a
+  >
+  &rsaquo; {{ title }}
+</div>
+{% endblock %} {% block content %}
+<div class="content">
+  <h1>{{ title }}</h1>
+
+  <div class="module aligned" style="margin-bottom: 20px">
+    <h2>{% trans "Информация о команде" %}</h2>
+    <div class="form-row">
+      <div><strong>{% trans "Название:" %}</strong> {{ team.name }}</div>
+      <div>
+        <strong>{% trans "Создатель:" %}</strong> {{ team.creator.username }}
+      </div>
+      <div>
+        <strong>{% trans "Статус:" %}</strong> 
+        <span class="status-badge status-{{ team.status }}">
+          {{ team.get_status_display }}
+        </span>
+      </div>
+      <div>
+        <strong>{% trans "Количество участников:" %}</strong> {{ member_count }}
+        {% if team.status != 'active' and active_member_count != member_count %}
+          <small style="color: #6c757d;">(активных: {{ active_member_count }})</small>
+        {% endif %}
+      </div>
+      <div><strong>{% trans "Дата создания:" %}</strong> {{ team.created_at|date:"d.m.Y H:i" }}</div>
+      <div><strong>{% trans "Последнее обновление:" %}</strong> {{ team.updated_at|date:"d.m.Y H:i" }}</div>
+    </div>
+
+    {% if memberships %}
+    <h3>{% trans "Участники команды:" %}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>{% trans "Пользователь" %}</th>
+          <th>{% trans "Роли" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for membership in memberships %}
+        <tr>
+          <td>{{ membership.user.username }}</td>
+          <td>
+            {% for role in membership.roles.all %}
+            <span
+              class="badge"
+              style="
+                background-color: #007cba;
+                color: white;
+                padding: 2px 6px;
+                border-radius: 3px;
+                margin-right: 5px;
+              "
+            >
+              {{ role.name }}
+            </span>
+            {% empty %}
+            <em>{% trans "Нет ролей" %}</em>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  {% if recent_status_changes %}
+  <div class="module aligned" style="margin-bottom: 20px">
+    <h3>{% trans "Последние изменения статуса:" %}</h3>
+    <table class="status-history-table">
+      <thead>
+        <tr>
+          <th>{% trans "Дата" %}</th>
+          <th>{% trans "Действие" %}</th>
+          <th>{% trans "Выполнил" %}</th>
+          <th>{% trans "Причина" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for change in recent_status_changes %}
+        <tr>
+          <td>{{ change.timestamp|date:"d.m.Y H:i" }}</td>
+          <td>
+            <span class="change-type-badge change-type-{{ change.change_type }}">
+              {{ change.get_change_type_display }}
+            </span>
+          </td>
+          <td>
+            {% if change.changed_by %}
+              {{ change.changed_by.username }}
+            {% else %}
+              <em>{% trans "Система" %}</em>
+            {% endif %}
+          </td>
+          <td>
+            {% if change.reason %}
+              {{ change.reason }}
+            {% else %}
+              <em style="color: #6c757d;">{% trans "Не указана" %}</em>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="module aligned">
+    <div class="form-row">
+      <div class="warning-box">
+        <h3 style="margin-top: 0">⚠️ {% trans "Внимание!" %}</h3>
+        <p>
+          <strong
+            >{% blocktrans with team_name=team.name %}Вы собираетесь удалить
+            команду "{{ team_name }}".{% endblocktrans %}</strong
+          >
+        </p>
+        <p>{% trans "Это действие:" %}</p>
+        <ul>
+          <li>{% trans "Удалит команду безвозвратно" %}</li>
+          <li>
+            {% blocktrans count counter=member_count %}Удалит все связи
+            участников с этой командой ({{ counter }} запись){% plural %}Удалит
+            все связи участников с этой командой ({{ counter }} записей){%
+            endblocktrans %}
+          </li>
+          <li>{% trans "Не может быть отменено" %}</li>
+        </ul>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="submit-row">
+        <input
+          type="submit"
+          name="confirm"
+          value="{% trans 'Да, удалить команду' %}"
+          class="delete-button"
+          onclick="return confirm('{% blocktrans with team_name=team.name %}Вы уверены, что хотите удалить команду {{ team_name }}? Это действие нельзя отменить!{% endblocktrans %}');"
+        />
+        <input
+          type="submit"
+          name="cancel"
+          value="{% trans 'Отмена' %}"
+          class="cancel-button"
+        />
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  /* Статусные бейджи */
+  .status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .status-active {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .status-inactive {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+  }
+
+  .status-disbanded {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  /* Бейджи типов изменений */
+  .change-type-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: bold;
+  }
+
+  .change-type-created {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .change-type-deactivated {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  .change-type-reactivated {
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .change-type-disbanded {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  /* Таблица истории статусов */
+  .status-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .status-history-table th,
+  .status-history-table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .status-history-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+  }
+
+  .warning-box {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid;
+  }
+
+  /* Светлая тема */
+  body:not([data-theme="dark"]) .warning-box {
+    background-color: #ffeaa7;
+    border-color: #fdcb6e;
+    color: #2d3748;
+  }
+
+  body:not([data-theme="dark"]) .warning-box h3 {
+    color: #e17055;
+  }
+
+  /* Тёмная тема */
+  body[data-theme="dark"] .warning-box,
+  [data-theme="dark"] .warning-box {
+    background-color: #4a5568;
+    border-color: #ed8936;
+    color: #e2e8f0;
+  }
+
+  body[data-theme="dark"] .warning-box h3,
+  [data-theme="dark"] .warning-box h3 {
+    color: #fbb6ce;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  table th,
+  table td {
+    padding: 8px;
+    text-align: left;
+  }
+
+  /* Светлая тема для таблиц */
+  body:not([data-theme="dark"]) table th,
+  body:not([data-theme="dark"]) table td {
+    border-bottom: 1px solid #ddd;
+  }
+
+  body:not([data-theme="dark"]) table th {
+    background-color: #f8f9fa;
+    color: #2d3748;
+  }
+
+  /* Тёмная тема для таблиц */
+  body[data-theme="dark"] table th,
+  body[data-theme="dark"] table td,
+  [data-theme="dark"] table th,
+  [data-theme="dark"] table td,
+  body[data-theme="dark"] .status-history-table th,
+  body[data-theme="dark"] .status-history-table td,
+  [data-theme="dark"] .status-history-table th,
+  [data-theme="dark"] .status-history-table td {
+    border-bottom: 1px solid #4a5568;
+  }
+
+  body[data-theme="dark"] table th,
+  [data-theme="dark"] table th,
+  body[data-theme="dark"] .status-history-table th,
+  [data-theme="dark"] .status-history-table th {
+    background-color: #2d3748;
+    color: #e2e8f0;
+  }
+
+  body[data-theme="dark"] table td,
+  [data-theme="dark"] table td,
+  body[data-theme="dark"] .status-history-table td,
+  [data-theme="dark"] .status-history-table td {
+    color: #cbd5e0;
+  }
+
+  /* Тёмная тема для статусных бейджей */
+  body[data-theme="dark"] .status-active,
+  [data-theme="dark"] .status-active {
+    background-color: #2d5a3d;
+    color: #a3d9a5;
+    border-color: #4a7c59;
+  }
+
+  body[data-theme="dark"] .status-inactive,
+  [data-theme="dark"] .status-inactive {
+    background-color: #5d4e37;
+    color: #f4d03f;
+    border-color: #8b7355;
+  }
+
+  body[data-theme="dark"] .status-disbanded,
+  [data-theme="dark"] .status-disbanded {
+    background-color: #5a2d2d;
+    color: #f1948a;
+    border-color: #7c4a4a;
+  }
+
+  /* Тёмная тема для бейджей типов изменений */
+  body[data-theme="dark"] .change-type-created,
+  [data-theme="dark"] .change-type-created {
+    background-color: #2d5a3d;
+    color: #a3d9a5;
+  }
+
+  body[data-theme="dark"] .change-type-deactivated,
+  [data-theme="dark"] .change-type-deactivated {
+    background-color: #5d4e37;
+    color: #f4d03f;
+  }
+
+  body[data-theme="dark"] .change-type-reactivated,
+  [data-theme="dark"] .change-type-reactivated {
+    background-color: #2d4a5a;
+    color: #85c1e9;
+  }
+
+  body[data-theme="dark"] .change-type-disbanded,
+  [data-theme="dark"] .change-type-disbanded {
+    background-color: #5a2d2d;
+    color: #f1948a;
+  }
+
+  /* Кнопки */
+  .delete-button {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+  }
+
+  .cancel-button {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    margin-left: 10px;
+    padding: 10px 15px;
+    border-radius: 4px;
+    border: 1px solid;
+    cursor: pointer;
+  }
+
+  /* Hover эффекты для кнопок */
+  .delete-button:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+
+  .cancel-button:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+  }
+</style>
+{% endblock %}
