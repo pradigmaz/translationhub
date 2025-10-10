@@ -25,58 +25,7 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav me-auto">
-                    <!-- Основная навигация с командами -->
-                    {% if user.is_authenticated %}
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'teams' %}active{% endif %}" 
-                               href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fas fa-users me-1"></i>Команды
-                                <span id="teams-total-badge" class="badge rounded-pill text-bg-primary ms-1" style="display: none;">0</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <h6 class="dropdown-header">
-                                        <i class="fas fa-users me-2"></i>Управление командами
-                                    </h6>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'team_list' and not request.GET.status %}active{% endif %}" 
-                                       href="{% url 'teams:team_list' %}">
-                                        <i class="fas fa-list me-2"></i>Все команды
-                                        <span id="teams-all-badge" class="badge rounded-pill text-bg-secondary ms-auto">0</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.GET.status == 'active' %}active{% endif %}" 
-                                       href="{% url 'teams:team_list' %}?status=active">
-                                        <i class="fas fa-check-circle me-2 text-success"></i>Активные
-                                        <span id="teams-active-badge" class="badge rounded-pill text-bg-success ms-auto">0</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.GET.status == 'inactive' %}active{% endif %}" 
-                                       href="{% url 'teams:team_list' %}?status=inactive">
-                                        <i class="fas fa-pause-circle me-2 text-warning"></i>Приостановленные
-                                        <span id="teams-inactive-badge" class="badge rounded-pill text-bg-warning ms-auto">0</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.GET.status == 'disbanded' %}active{% endif %}" 
-                                       href="{% url 'teams:team_list' %}?status=disbanded">
-                                        <i class="fas fa-times-circle me-2 text-danger"></i>Распущенные
-                                        <span id="teams-disbanded-badge" class="badge rounded-pill text-bg-danger ms-auto">0</span>
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item" href="{% url 'teams:team_create' %}">
-                                        <i class="fas fa-plus me-2 text-primary"></i>Создать команду
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    {% endif %}
+                    <!-- Основная навигация - теперь пустая, команды перенесены в пользовательский dropdown -->
                 </div>
                 <div class="navbar-nav ms-auto">
                     {% if user.is_authenticated %}
@@ -111,13 +60,57 @@
                                         <i class="fas fa-tachometer-alt me-2"></i>Дашборд
                                     </a>
                                 </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.namespace == 'teams' %}active{% endif %}" 
-                                       href="{% url 'teams:team_list' %}">
-                                        <i class="fas fa-users me-2"></i>Мои команды
-                                        <span id="user-teams-badge" class="badge rounded-pill text-bg-primary ms-auto">0</span>
+                                <!-- Команды - вложенное подменю -->
+                                <li class="dropend">
+                                    <a class="dropdown-item dropdown-toggle {% if request.resolver_match.namespace == 'teams' %}active{% endif %}" 
+                                       href="#" role="button" aria-expanded="false">
+                                        <i class="fas fa-users me-2"></i>Команды
+                                        <span id="teams-total-badge" class="badge rounded-pill text-bg-primary ms-1" style="display: none;">0</span>
                                     </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <h6 class="dropdown-header">
+                                                <i class="fas fa-users me-2"></i>Управление командами
+                                            </h6>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item {% if request.resolver_match.url_name == 'team_list' and not request.GET.status %}active{% endif %}" 
+                                               href="{% url 'teams:team_list' %}">
+                                                <i class="fas fa-list me-2"></i>Все команды
+                                                <span id="teams-all-badge" class="badge rounded-pill text-bg-secondary ms-auto">0</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item {% if request.GET.status == 'active' %}active{% endif %}" 
+                                               href="{% url 'teams:team_list' %}?status=active">
+                                                <i class="fas fa-check-circle me-2 text-success"></i>Активные
+                                                <span id="teams-active-badge" class="badge rounded-pill text-bg-success ms-auto">0</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item {% if request.GET.status == 'inactive' %}active{% endif %}" 
+                                               href="{% url 'teams:team_list' %}?status=inactive">
+                                                <i class="fas fa-pause-circle me-2 text-warning"></i>Приостановленные
+                                                <span id="teams-inactive-badge" class="badge rounded-pill text-bg-warning ms-auto">0</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item {% if request.GET.status == 'disbanded' %}active{% endif %}" 
+                                               href="{% url 'teams:team_list' %}?status=disbanded">
+                                                <i class="fas fa-times-circle me-2 text-danger"></i>Распущенные
+                                                <span id="teams-disbanded-badge" class="badge rounded-pill text-bg-danger ms-auto">0</span>
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'teams:team_create' %}">
+                                                <i class="fas fa-plus me-2 text-primary"></i>Создать команду
+                                            </a>
+                                        </li>
+                                    </ul>
                                 </li>
+                                <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item {% if request.resolver_match.url_name == 'tasks' %}active{% endif %}" 
                                        href="{% url 'users:tasks' %}">
@@ -237,7 +230,7 @@
                     const activeBadge = document.getElementById('teams-active-badge');
                     const inactiveBadge = document.getElementById('teams-inactive-badge');
                     const disbandedBadge = document.getElementById('teams-disbanded-badge');
-                    const userTeamsBadge = document.getElementById('user-teams-badge');
+
                     
                     const totalCount = data.active + data.inactive + data.disbanded;
                     
@@ -257,15 +250,7 @@
                     if (inactiveBadge) inactiveBadge.textContent = data.inactive;
                     if (disbandedBadge) disbandedBadge.textContent = data.disbanded;
                     
-                    // Обновляем бейдж в dropdown пользователя
-                    if (userTeamsBadge) {
-                        if (totalCount > 0) {
-                            userTeamsBadge.textContent = totalCount > 99 ? '99+' : totalCount;
-                            userTeamsBadge.style.display = 'inline-block';
-                        } else {
-                            userTeamsBadge.style.display = 'none';
-                        }
-                    }
+
                 })
                 .catch(error => {
                     console.error('Ошибка при получении счетчиков команд:', error);
@@ -288,6 +273,64 @@
         window.updateNavigationCounters = function() {
             updateTeamCounts();
         };
+        
+        // Обработка вложенного подменю по клику
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropendItems = document.querySelectorAll('.dropdown-menu .dropend');
+            
+            dropendItems.forEach(function(dropend) {
+                const dropdownToggle = dropend.querySelector('.dropdown-toggle');
+                const dropdownMenu = dropend.querySelector('.dropdown-menu');
+                
+                if (dropdownToggle && dropdownMenu) {
+                    // Переключаем подменю по клику
+                    dropdownToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const isOpen = dropdownMenu.classList.contains('show');
+                        
+                        // Закрываем все другие подменю
+                        document.querySelectorAll('.dropdown-menu .dropend').forEach(function(otherDropend) {
+                            const otherMenu = otherDropend.querySelector('.dropdown-menu');
+                            const otherToggle = otherDropend.querySelector('.dropdown-toggle');
+                            if (otherMenu !== dropdownMenu) {
+                                otherMenu.classList.remove('show');
+                                otherToggle.setAttribute('aria-expanded', 'false');
+                                otherToggle.classList.remove('active');
+                            }
+                        });
+                        
+                        // Переключаем текущее подменю
+                        if (isOpen) {
+                            dropdownMenu.classList.remove('show');
+                            dropdownToggle.setAttribute('aria-expanded', 'false');
+                            dropdownToggle.classList.remove('active');
+                        } else {
+                            dropdownMenu.classList.add('show');
+                            dropdownToggle.setAttribute('aria-expanded', 'true');
+                            dropdownToggle.classList.add('active');
+                        }
+                    });
+                    
+                    // Предотвращаем закрытие основного dropdown при клике на подменю
+                    dropdownMenu.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                }
+            });
+            
+            // Закрываем все подменю при клике вне их
+            document.addEventListener('click', function() {
+                document.querySelectorAll('.dropdown-menu .dropend').forEach(function(dropend) {
+                    const menu = dropend.querySelector('.dropdown-menu');
+                    const toggle = dropend.querySelector('.dropdown-toggle');
+                    menu.classList.remove('show');
+                    toggle.setAttribute('aria-expanded', 'false');
+                    toggle.classList.remove('active');
+                });
+            });
+        });
     </script>
     {% endif %}
 </body>
