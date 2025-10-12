@@ -4,8 +4,7 @@ from . import views
 app_name = 'glossary'
 
 urlpatterns = [
-    # URL-маршруты будут добавлены при реализации представлений
-    # path('', views.GlossaryListView.as_view(), name='glossary_list'),
-    # path('create/', views.GlossaryCreateView.as_view(), name='glossary_create'),
-    # path('<int:pk>/', views.GlossaryDetailView.as_view(), name='glossary_detail'),
+    path('project/<int:project_id>/', views.glossary_list, name='glossary_list'),
+    path('project/<int:project_id>/create/', views.glossary_create, name='glossary_create'),
+    path('project/<int:project_id>/<int:pk>/', views.glossary_detail, name='glossary_detail'),
 ]

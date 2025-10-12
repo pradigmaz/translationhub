@@ -1,0 +1,179 @@
+{% extends 'base.html' %} {% load static %} {% block title %}Создать проект - TranslationHub{% endblock %} {% block content %}
+<div class="container py-4">
+  <!-- Breadcrumb навигация -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      {% if selected_team %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'teams:team_detail' selected_team.id %}"> <i class="fas fa-users me-1"></i>{{ selected_team.name }} </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page"><i class="fas fa-plus me-1"></i>Новый проект</li>
+      {% else %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'content:editor' %}"> <i class="fas fa-home me-1"></i>Редактор </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page"><i class="fas fa-plus me-1"></i>Новый проект</li>
+      {% endif %}
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-plus me-2"></i>Создать новый проект {% if selected_team %}
+            <small class="d-block mt-1 opacity-75"> <i class="fas fa-users me-1"></i>для команды "{{ selected_team.name }}" </small>
+            {% endif %}
+          </h4>
+        </div>
+        <div class="card-body">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-4">
+              <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-tag me-2"></i>Название проекта
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.name }} {% if form.name.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.name.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Введите понятное название для вашего проекта</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="{{ form.team.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-users me-2"></i>Команда
+                <span class="text-danger">*</span>
+              </label>
+              {% if selected_team %}
+              <div class="alert alert-info d-flex align-items-center">
+                <i class="fas fa-info-circle me-2"></i>
+                <div>
+                  <strong>Выбранная команда:</strong> {{ selected_team.name }}
+                  <br />
+                  <small class="text-muted">Проект будет создан для этой команды</small>
+                </div>
+              </div>
+              {% endif %} {{ form.team }} {% if form.team.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.team.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">{% if selected_team %} При необходимости вы можете выбрать другую команду из списка {% else %} Выберите команду, к которой будет принадлежать проект {% endif %}</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="{{ form.content_folder.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-folder me-2"></i>Папка контента
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.content_folder }} {% if form.content_folder.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.content_folder.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Уникальное имя папки для файлов проекта (только буквы, цифры, дефисы и подчеркивания)</div>
+            </div>
+
+            <div class="mb-4">
+              <label for="{{ form.description.id_for_label }}" class="form-label fw-bold"> <i class="fas fa-align-left me-2"></i>Описание </label>
+              {{ form.description }} {% if form.description.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.description.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }} {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Краткое описание проекта (необязательно)</div>
+            </div>
+
+            <!-- Информация о статусе проекта -->
+            <div class="alert alert-info d-flex align-items-start">
+              <i class="fas fa-info-circle me-2 mt-1 flex-shrink-0"></i>
+              <div class="flex-grow-1">
+                <h6 class="alert-heading mb-2">Статус проекта</h6>
+                <p class="mb-2">
+                  Новый проект автоматически получит статус 
+                  <span class="badge bg-primary">
+                    <i class="fas fa-language me-1"></i>Переводим
+                  </span>
+                </p>
+                <small class="text-muted">
+                  <strong>Доступные статусы:</strong> 
+                  <strong>Переводим</strong> - активная работа над проектом, 
+                  <strong>Переведён</strong> - все главы готовы, 
+                  <strong>Заморожен</strong> - временная приостановка,
+                  <strong>Заброшен</strong> - работа прекращена
+                </small>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 justify-content-between">
+              {% if selected_team %}
+              <a href="{% url 'teams:team_detail' selected_team.id %}" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Вернуться к странице команды"> <i class="fas fa-arrow-left me-2"></i>Назад к команде </a>
+              {% else %}
+              <a href="{% url 'content:editor' %}" class="btn btn-secondary" data-bs-toggle="tooltip" data-bs-placement="top" title="Вернуться к главной странице редактора"> <i class="fas fa-arrow-left me-2"></i>Назад к редактору </a>
+              {% endif %}
+              <button type="submit" class="btn btn-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="Создать новый проект с указанными параметрами"><i class="fas fa-save me-2"></i>Создать проект</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Инициализация Bootstrap компонентов -->
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Инициализация tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+  });
+</script>
+
+<!-- Адаптивные стили -->
+<style>
+  @media (max-width: 768px) {
+    .container {
+      padding-left: 15px;
+      padding-right: 15px;
+    }
+
+    .d-flex.flex-wrap.gap-2 {
+      flex-direction: column;
+    }
+
+    .d-flex.flex-wrap.gap-2 .btn {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+
+    .breadcrumb {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .card-header h4 {
+      font-size: 1.1rem;
+    }
+
+    .form-label {
+      font-size: 0.9rem;
+    }
+
+    .form-text {
+      font-size: 0.8rem;
+    }
+  }
+</style>
+{% endblock %}

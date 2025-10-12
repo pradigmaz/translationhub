@@ -1,0 +1,170 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load utils.admin_monitoring %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Главная</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger">
+            <strong>Ошибка:</strong> {{ error }}
+        </div>
+    {% else %}
+        <!-- Общая информация о диске -->
+        {% if metrics.disk_usage %}
+        <div class="module">
+            <h2>Информация о диске</h2>
+            <table class="table">
+                <tr>
+                    <th>Общий размер:</th>
+                    <td>{{ metrics.disk_usage.total|format_file_size }}</td>
+                </tr>
+                <tr>
+                    <th>Использовано:</th>
+                    <td>
+                        {{ metrics.disk_usage.used|format_file_size }} 
+                        ({{ metrics.disk_usage.percent_used }}%)
+                        {% if metrics.disk_usage.percent_used > 90 %}
+                            <span class="badge badge-danger">Критически мало места!</span>
+                        {% elif metrics.disk_usage.percent_used > 80 %}
+                            <span class="badge badge-warning">Мало места</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Свободно:</th>
+                    <td>{{ metrics.disk_usage.free|format_file_size }}</td>
+                </tr>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Разбивка по медиа папкам -->
+        {% if metrics.media_breakdown %}
+        <div class="module">
+            <h2>Использование медиа папок</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Категория</th>
+                        <th>Размер</th>
+                        <th>Файлов</th>
+                        <th>Процент</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category, info in metrics.media_breakdown.items %}
+                        {% if category != 'total' and 'error' not in info %}
+                        <tr>
+                            <td>{{ category|capfirst }}</td>
+                            <td>{{ info.size_bytes|format_file_size }}</td>
+                            <td>{{ info.file_count }}</td>
+                            <td>
+                                {% if metrics.media_breakdown.total.size_bytes > 0 %}
+                                    {{ info.size_bytes|percentage:metrics.media_breakdown.total.size_bytes }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                    {% if metrics.media_breakdown.total %}
+                    <tr class="total-row" style="font-weight: bold; border-top: 2px solid #ddd;">
+                        <td>ИТОГО</td>
+                        <td>{{ metrics.media_breakdown.total.size_bytes|format_file_size }}</td>
+                        <td>{{ metrics.media_breakdown.total.file_count }}</td>
+                        <td>100%</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Действия -->
+        <div class="module">
+            <h2>Действия</h2>
+            <p>
+                <a href="{% url 'admin:operation_stats' %}" class="button">Статистика операций</a>
+                <a href="{% url 'admin:cleanup_orphaned' %}" class="button">Очистка осиротевших файлов</a>
+                <a href="{% url 'admin:api_metrics' %}" class="button" target="_blank">API метрик</a>
+            </p>
+        </div>
+        
+        <!-- Детальные данные (скрытые по умолчанию) -->
+        <div class="module">
+            <h2>
+                <a href="#" onclick="toggleDetails(); return false;">
+                    Детальные данные (JSON) <span id="toggle-text">[показать]</span>
+                </a>
+            </h2>
+            <div id="detailed-data" style="display: none;">
+                <pre style="background: #f8f8f8; padding: 10px; border: 1px solid #ddd; overflow: auto; max-height: 400px;">{{ metrics_json }}</pre>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleDetails() {
+    var details = document.getElementById('detailed-data');
+    var toggleText = document.getElementById('toggle-text');
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        toggleText.textContent = '[скрыть]';
+    } else {
+        details.style.display = 'none';
+        toggleText.textContent = '[показать]';
+    }
+}
+
+// Автообновление каждые 30 секунд
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+
+<style>
+.badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: white;
+    font-size: 11px;
+}
+.badge-danger {
+    background-color: #dc3545;
+}
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th, .table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+.total-row {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

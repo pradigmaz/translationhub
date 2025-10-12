@@ -1,0 +1,509 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Главная</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block extrahead %}
+<style>
+.diagnostic-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.diagnostic-section h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.status-ok {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-warning {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.status-error {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.issue-list {
+    list-style: none;
+    padding: 0;
+}
+
+.issue-item {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 4px;
+    border-left: 4px solid;
+}
+
+.issue-critical {
+    background: #f8d7da;
+    border-left-color: #dc3545;
+    color: #721c24;
+}
+
+.issue-warning {
+    background: #fff3cd;
+    border-left-color: #ffc107;
+    color: #856404;
+}
+
+.issue-info {
+    background: #d1ecf1;
+    border-left-color: #17a2b8;
+    color: #0c5460;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.summary-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    text-align: center;
+}
+
+.summary-number {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.summary-number.critical {
+    color: #dc3545;
+}
+
+.summary-number.warning {
+    color: #ffc107;
+}
+
+.summary-number.ok {
+    color: #28a745;
+}
+
+.file-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+}
+
+.file-table th,
+.file-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.file-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.file-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.file-path {
+    font-family: monospace;
+    color: #495057;
+}
+
+.duplicate-group {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 10px 0;
+}
+
+.duplicate-group h4 {
+    color: #856404;
+    margin-top: 0;
+}
+
+.duplicate-files {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.duplicate-files li {
+    font-family: monospace;
+    color: #495057;
+    margin: 5px 0;
+    padding: 5px;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+.actions {
+    margin: 20px 0;
+}
+
+.btn {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 5px;
+    background: #007cba;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #005a87;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapsible:hover {
+    background-color: #f8f9fa;
+}
+
+.collapsible-content {
+    display: none;
+    margin-top: 10px;
+}
+
+.collapsible.active + .collapsible-content {
+    display: block;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger">
+            <strong>Ошибка:</strong> {{ error }}
+        </div>
+    {% else %}
+        <!-- Сводка по проблемам -->
+        {% if integrity_report %}
+        <div class="diagnostic-section">
+            <h3>Сводка диагностики</h3>
+            <div class="summary-stats">
+                <div class="summary-card">
+                    <div class="summary-number critical">{{ integrity_report.summary.critical_issues }}</div>
+                    <p>Критические проблемы</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number warning">{{ integrity_report.summary.warnings }}</div>
+                    <p>Предупреждения</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-number {% if integrity_report.summary.total_issues == 0 %}ok{% else %}warning{% endif %}">
+                        {{ integrity_report.summary.total_issues }}
+                    </div>
+                    <p>Всего проблем</p>
+                </div>
+            </div>
+            
+            {% if integrity_report.summary.total_issues == 0 %}
+                <div class="status-ok">✓ Структура файлов в порядке - проблем не обнаружено</div>
+            {% endif %}
+        </div>
+        {% endif %}
+        
+        <!-- Недостающие директории -->
+        {% if integrity_report.missing_directories %}
+        <div class="diagnostic-section">
+            <h3 class="collapsible" onclick="toggleCollapsible(this)">
+                ⚠ Недостающие директории ({{ integrity_report.missing_directories|length }})
+            </h3>
+            <div class="collapsible-content">
+                <ul class="issue-list">
+                    {% for missing in integrity_report.missing_directories %}
+                    <li class="issue-item {% if missing.severity == 'critical' %}issue-critical{% else %}issue-warning{% endif %}">
+                        <strong>{{ missing.path }}</strong>
+                        <br>
+                        Тип: {{ missing.type|capfirst }}
+                        {% if missing.username %}
+                            - Пользователь: {{ missing.username }}
+                        {% endif %}
+                        {% if missing.team_name %}
+                            - Команда: {{ missing.team_name }}
+                        {% endif %}
+                        {% if missing.project_title %}
+                            - Проект: {{ missing.project_title }}
+                        {% endif %}
+                        <br>
+                        <small>Серьезность: {{ missing.severity|capfirst }}</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Осиротевшие директории -->
+        {% if integrity_report.orphaned_directories %}
+        <div class="diagnostic-section">
+            <h3 class="collapsible" onclick="toggleCollapsible(this)">
+                🗑 Осиротевшие директории ({{ integrity_report.orphaned_directories|length }})
+            </h3>
+            <div class="collapsible-content">
+                <ul class="issue-list">
+                    {% for orphaned in integrity_report.orphaned_directories %}
+                    <li class="issue-item issue-warning">
+                        <strong>{{ orphaned.path }}</strong>
+                        <br>
+                        Тип: {{ orphaned.type|capfirst }}
+                        {% if orphaned.user_id %}
+                            - ID пользователя: {{ orphaned.user_id }}
+                        {% endif %}
+                        {% if orphaned.team_id %}
+                            - ID команды: {{ orphaned.team_id }}
+                        {% endif %}
+                        <br>
+                        <small>Директория не связана с существующими объектами</small>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Осиротевшие файлы -->
+        {% if orphaned_files %}
+        <div class="diagnostic-section">
+            <h3 class="collapsible" onclick="toggleCollapsible(this)">
+                📄 Осиротевшие файлы ({{ orphaned_files.summary.total_files }})
+            </h3>
+            <div class="collapsible-content">
+                <p><strong>Общий размер:</strong> {{ orphaned_files.summary.total_size|filesizeformat }}</p>
+                
+                {% if orphaned_files.user_files %}
+                <h4>Файлы пользователей ({{ orphaned_files.user_files|length }})</h4>
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>Путь</th>
+                            <th>Размер</th>
+                            <th>Изменен</th>
+                            <th>ID пользователя</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in orphaned_files.user_files|slice:":20" %}
+                        <tr>
+                            <td class="file-path">{{ file.path }}</td>
+                            <td>{{ file.size|filesizeformat }}</td>
+                            <td>{{ file.modified|date:"d.m.Y H:i" }}</td>
+                            <td>{{ file.user_id }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if orphaned_files.user_files|length > 20 %}
+                        <tr>
+                            <td colspan="4"><em>... и еще {{ orphaned_files.user_files|length|add:"-20" }} файлов</em></td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                {% endif %}
+                
+                {% if orphaned_files.team_files %}
+                <h4>Файлы команд ({{ orphaned_files.team_files|length }})</h4>
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>Путь</th>
+                            <th>Размер</th>
+                            <th>Изменен</th>
+                            <th>ID команды</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in orphaned_files.team_files|slice:":20" %}
+                        <tr>
+                            <td class="file-path">{{ file.path }}</td>
+                            <td>{{ file.size|filesizeformat }}</td>
+                            <td>{{ file.modified|date:"d.m.Y H:i" }}</td>
+                            <td>{{ file.team_id }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if orphaned_files.team_files|length > 20 %}
+                        <tr>
+                            <td colspan="4"><em>... и еще {{ orphaned_files.team_files|length|add:"-20" }} файлов</em></td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Проблемы с правами доступа -->
+        {% if permission_issues %}
+        <div class="diagnostic-section">
+            <h3 class="collapsible" onclick="toggleCollapsible(this)">
+                🔒 Проблемы с правами доступа ({{ permission_issues.summary.total_issues }})
+            </h3>
+            <div class="collapsible-content">
+                {% if permission_issues.unreadable_files %}
+                <h4>Нечитаемые файлы ({{ permission_issues.unreadable_files|length }})</h4>
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>Путь</th>
+                            <th>Права доступа</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in permission_issues.unreadable_files|slice:":10" %}
+                        <tr>
+                            <td class="file-path">{{ file.path }}</td>
+                            <td>{{ file.permissions }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+                
+                {% if permission_issues.unwritable_directories %}
+                <h4>Недоступные для записи директории ({{ permission_issues.unwritable_directories|length }})</h4>
+                <table class="file-table">
+                    <thead>
+                        <tr>
+                            <th>Путь</th>
+                            <th>Права доступа</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for dir in permission_issues.unwritable_directories|slice:":10" %}
+                        <tr>
+                            <td class="file-path">{{ dir.path }}</td>
+                            <td>{{ dir.permissions }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Дублирующиеся файлы -->
+        {% if duplicate_files %}
+        <div class="diagnostic-section">
+            <h3 class="collapsible" onclick="toggleCollapsible(this)">
+                👥 Дублирующиеся файлы ({{ duplicate_files.summary.total_duplicates }})
+            </h3>
+            <div class="collapsible-content">
+                <p><strong>Потрачено места:</strong> {{ duplicate_files.summary.wasted_space|filesizeformat }}</p>
+                
+                {% for group in duplicate_files.duplicate_groups|slice:":10" %}
+                <div class="duplicate-group">
+                    <h4>Группа дубликатов ({{ group.count }} файлов, {{ group.size|filesizeformat }} каждый)</h4>
+                    <p><strong>Потрачено:</strong> {{ group.wasted_space|filesizeformat }}</p>
+                    <ul class="duplicate-files">
+                        {% for file in group.files %}
+                        <li>{{ file.path }} - {{ file.modified|date:"d.m.Y H:i" }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endfor %}
+                
+                {% if duplicate_files.duplicate_groups|length > 10 %}
+                <p><em>... и еще {{ duplicate_files.duplicate_groups|length|add:"-10" }} групп дубликатов</em></p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Действия -->
+        <div class="actions">
+            <a href="{% url 'admin:file_management' %}" class="btn">Управление файлами</a>
+            <a href="{% url 'admin:file_structure' %}" class="btn">Структура файлов</a>
+            <a href="{% url 'admin:file_statistics' %}" class="btn">Статистика</a>
+            <button onclick="location.reload()" class="btn btn-secondary">Обновить диагностику</button>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleCollapsible(element) {
+    element.classList.toggle('active');
+    const content = element.nextElementSibling;
+    if (content.style.display === 'block') {
+        content.style.display = 'none';
+    } else {
+        content.style.display = 'block';
+    }
+}
+
+// Автоматически раскрываем секции с проблемами
+document.addEventListener('DOMContentLoaded', function() {
+    const collapsibles = document.querySelectorAll('.collapsible');
+    collapsibles.forEach(function(collapsible) {
+        // Раскрываем секции с проблемами
+        const text = collapsible.textContent;
+        if (text.includes('⚠') || text.includes('🗑') || text.includes('📄') || text.includes('🔒') || text.includes('👥')) {
+            const match = text.match(/\((\d+)\)/);
+            if (match && parseInt(match[1]) > 0) {
+                collapsible.click();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,22 +1,12 @@
-{% extends "admin/base_site.html" %} {% load i18n admin_urls static admin_modify
-%} {% block extrahead %} {{ block.super }}
-<link
-  rel="stylesheet"
-  type="text/css"
-  href="{% static 'admin/css/teams_dark_theme.css' %}"
-/>
-{% endblock %} {% block title %}{{ title }} | {{ site_title|default:_('Django
-site admin') }}{% endblock %} {% block breadcrumbs %}
+{% extends "admin/base_site.html" %} {% load i18n admin_urls static admin_modify %} {% block extrahead %} {{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/teams_dark_theme.css' %}" />
+{% endblock %} {% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %} {% block breadcrumbs %}
 <div class="breadcrumbs">
   <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
   &rsaquo;
-  <a href="{% url 'admin:app_list' app_label=opts.app_label %}"
-    >{{ opts.app_config.verbose_name }}</a
-  >
+  <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
   &rsaquo;
-  <a href="{% url 'admin:teams_team_changelist' %}"
-    >{{ opts.verbose_name_plural|capfirst }}</a
-  >
+  <a href="{% url 'admin:teams_team_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
   &rsaquo; {{ title }}
 </div>
 {% endblock %} {% block content %}
@@ -27,19 +17,14 @@ site admin') }}{% endblock %} {% block breadcrumbs %}
     <h2>{% trans "Информация о команде" %}</h2>
     <div class="form-row">
       <div><strong>{% trans "Название:" %}</strong> {{ team.name }}</div>
+      <div><strong>{% trans "Создатель:" %}</strong> {{ team.creator.username }}</div>
       <div>
-        <strong>{% trans "Создатель:" %}</strong> {{ team.creator.username }}
+        <strong>{% trans "Статус:" %}</strong>
+        <span class="status-badge status-{{ team.status }}"> {{ team.get_status_display }} </span>
       </div>
       <div>
-        <strong>{% trans "Статус:" %}</strong> 
-        <span class="status-badge status-{{ team.status }}">
-          {{ team.get_status_display }}
-        </span>
-      </div>
-      <div>
-        <strong>{% trans "Количество участников:" %}</strong> {{ member_count }}
-        {% if team.status != 'active' and active_member_count != member_count %}
-          <small style="color: #6c757d;">(активных: {{ active_member_count }})</small>
+        <strong>{% trans "Количество участников:" %}</strong> {{ member_count }} {% if team.status != 'active' and active_member_count != member_count %}
+        <small style="color: #6c757d">(активных: {{ active_member_count }})</small>
         {% endif %}
       </div>
       <div><strong>{% trans "Дата создания:" %}</strong> {{ team.created_at|date:"d.m.Y H:i" }}</div>
@@ -61,18 +46,7 @@ site admin') }}{% endblock %} {% block breadcrumbs %}
           <td>{{ membership.user.username }}</td>
           <td>
             {% for role in membership.roles.all %}
-            <span
-              class="badge"
-              style="
-                background-color: #007cba;
-                color: white;
-                padding: 2px 6px;
-                border-radius: 3px;
-                margin-right: 5px;
-              "
-            >
-              {{ role.name }}
-            </span>
+            <span class="badge" style="background-color: #007cba; color: white; padding: 2px 6px; border-radius: 3px; margin-right: 5px"> {{ role.name }} </span>
             {% empty %}
             <em>{% trans "Нет ролей" %}</em>
             {% endfor %}
@@ -101,22 +75,16 @@ site admin') }}{% endblock %} {% block breadcrumbs %}
         <tr>
           <td>{{ change.timestamp|date:"d.m.Y H:i" }}</td>
           <td>
-            <span class="change-type-badge change-type-{{ change.change_type }}">
-              {{ change.get_change_type_display }}
-            </span>
+            <span class="change-type-badge change-type-{{ change.change_type }}"> {{ change.get_change_type_display }} </span>
           </td>
           <td>
-            {% if change.changed_by %}
-              {{ change.changed_by.username }}
-            {% else %}
-              <em>{% trans "Система" %}</em>
+            {% if change.changed_by %} {{ change.changed_by.username }} {% else %}
+            <em>{% trans "Система" %}</em>
             {% endif %}
           </td>
           <td>
-            {% if change.reason %}
-              {{ change.reason }}
-            {% else %}
-              <em style="color: #6c757d;">{% trans "Не указана" %}</em>
+            {% if change.reason %} {{ change.reason }} {% else %}
+            <em style="color: #6c757d">{% trans "Не указана" %}</em>
             {% endif %}
           </td>
         </tr>
@@ -131,20 +99,12 @@ site admin') }}{% endblock %} {% block breadcrumbs %}
       <div class="warning-box">
         <h3 style="margin-top: 0">⚠️ {% trans "Внимание!" %}</h3>
         <p>
-          <strong
-            >{% blocktrans with team_name=team.name %}Вы собираетесь удалить
-            команду "{{ team_name }}".{% endblocktrans %}</strong
-          >
+          <strong>{% blocktrans with team_name=team.name %}Вы собираетесь удалить команду "{{ team_name }}".{% endblocktrans %}</strong>
         </p>
         <p>{% trans "Это действие:" %}</p>
         <ul>
           <li>{% trans "Удалит команду безвозвратно" %}</li>
-          <li>
-            {% blocktrans count counter=member_count %}Удалит все связи
-            участников с этой командой ({{ counter }} запись){% plural %}Удалит
-            все связи участников с этой командой ({{ counter }} записей){%
-            endblocktrans %}
-          </li>
+          <li>{% blocktrans count counter=member_count %}Удалит все связи участников с этой командой ({{ counter }} запись){% plural %}Удалит все связи участников с этой командой ({{ counter }} записей){% endblocktrans %}</li>
           <li>{% trans "Не может быть отменено" %}</li>
         </ul>
       </div>
@@ -153,19 +113,8 @@ site admin') }}{% endblock %} {% block breadcrumbs %}
     <form method="post">
       {% csrf_token %}
       <div class="submit-row">
-        <input
-          type="submit"
-          name="confirm"
-          value="{% trans 'Да, удалить команду' %}"
-          class="delete-button"
-          onclick="return confirm('{% blocktrans with team_name=team.name %}Вы уверены, что хотите удалить команду {{ team_name }}? Это действие нельзя отменить!{% endblocktrans %}');"
-        />
-        <input
-          type="submit"
-          name="cancel"
-          value="{% trans 'Отмена' %}"
-          class="cancel-button"
-        />
+        <input type="submit" name="confirm" value="{% trans 'Да, удалить команду' %}" class="delete-button" onclick="return confirm('Вы уверены, что хотите удалить команду? Это действие нельзя отменить!');" />
+        <input type="submit" name="cancel" value="{% trans 'Отмена' %}" class="cancel-button" />
       </div>
     </form>
   </div>

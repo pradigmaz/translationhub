@@ -1,0 +1,207 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}File System Status - {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block extrahead %}
+<style>
+.file-system-status {
+    margin: 20px 0;
+}
+
+.status-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.status-card h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.disk-usage {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
+.usage-bar {
+    flex: 1;
+    height: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    margin: 0 15px;
+    overflow: hidden;
+}
+
+.usage-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.usage-normal { background: #28a745; }
+.usage-warning { background: #ffc107; }
+.usage-critical { background: #dc3545; }
+
+.directory-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.directory-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+}
+
+.directory-card h4 {
+    margin: 0 0 10px 0;
+    color: #495057;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.warning-list {
+    list-style: none;
+    padding: 0;
+}
+
+.warning-list li {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 10px;
+    margin: 5px 0;
+    color: #856404;
+}
+
+.warning-list li:before {
+    content: "⚠ ";
+    font-weight: bold;
+}
+
+.error-message {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 15px;
+    color: #721c24;
+    margin: 15px 0;
+}
+
+.success-message {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 15px;
+    color: #155724;
+    margin: 15px 0;
+}
+
+.refresh-button {
+    background: #007cba;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.refresh-button:hover {
+    background: #005a87;
+}
+
+.timestamp {
+    color: #666;
+    font-size: 12px;
+    margin-top: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="file-system-status">
+    <h1>File System Status</h1>
+    
+    <button class="refresh-button" onclick="location.reload()">Refresh Status</button>
+    
+    {% if error %}
+        <div class="error-message">
+            <strong>Error:</strong> {{ error }}
+        </div>
+    {% elif health_report %}
+        {% if not has_warnings and not has_errors %}
+            <div class="success-message">
+                ✓ File system health check passed - no issues detected
+            </div>
+        {% endif %}
+        
+        <!-- Disk Usage -->
+        <div class="status-card">
+            <h3>Disk Usage</h3>
+            {% with disk_usage=health_report.disk_usage %}
+                <div class="disk-usage">
+                    <strong>{{ disk_usage.percent_used }}%</strong>
+                    <div class="usage-bar">
+                        <div class="usage-fill {% if disk_usage.percent_used > 90 %}usage-critical{% elif disk_usage.percent_used > 80 %}usage-warning{% else %}usage-normal{% endif %}" 
+                             style="width: {{ disk_usage.percent_used }}%"></div>
+                    </div>
+                    <span>{{ disk_usage.free|filesizeformat }} free of {{ disk_usage.total|filesizeformat }}</span>
+                </div>
+                <p><strong>Used:</strong> {{ disk_usage.used|filesizeformat }}</p>
+            {% endwith %}
+        </div>
+        
+        <!-- Directory Information -->
+        <div class="status-card">
+            <h3>Directory Information</h3>
+            <div class="directory-info">
+                {% for dir_name, dir_info in health_report.directories.items %}
+                    <div class="directory-card">
+                        <h4>{{ dir_name|title }}</h4>
+                        <p><strong>Exists:</strong> {% if dir_info.exists %}✓ Yes{% else %}✗ No{% endif %}</p>
+                        <p><strong>Size:</strong> {{ dir_info.size|filesizeformat }}</p>
+                        {% if dir_info.file_count %}
+                            <p><strong>Files:</strong> {{ dir_info.file_count.files }}</p>
+                            <p><strong>Directories:</strong> {{ dir_info.file_count.directories }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Warnings -->
+        {% if health_report.warnings %}
+            <div class="status-card">
+                <h3>Warnings</h3>
+                <ul class="warning-list">
+                    {% for warning in health_report.warnings %}
+                        <li>{{ warning }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        <div class="timestamp">
+            Last updated: {{ health_report.timestamp }}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Auto-refresh every 5 minutes
+setTimeout(function() {
+    location.reload();
+}, 300000);
+</script>
+{% endblock %}

@@ -134,6 +134,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         
         # Последние 5 задач для отображения на дашборде
         context["recent_tasks"] = user_tasks[:5]
+        
+        # Подсчет проектов пользователя
+        from projects.models import Project
+        user_projects = Project.objects.filter(team__members=current_user)
+        context["projects_count"] = user_projects.count()
+        
+        # Подсчет активных задач
+        context["active_tasks_count"] = user_tasks.exclude(status='done').count()
 
         return context
 
@@ -181,6 +189,16 @@ class ProfileEditView(LoginRequiredMixin, UpdateView):
         """
         Обработка успешного сохранения профиля с логированием
         """
+        from utils.file_system import DirectoryManager, FileUploadError
+        
+        # Если загружается аватарка, создаем папку пользователя
+        if form.cleaned_data.get('avatar'):
+            try:
+                DirectoryManager.create_user_directory(self.request.user.id)
+            except FileUploadError as e:
+                messages.error(self.request, f"Ошибка создания папки пользователя: {str(e)}")
+                return self.form_invalid(form)
+        
         response = super().form_valid(form)
         
         # Логирование изменения профиля
@@ -318,6 +336,8 @@ class SettingsView(LoginRequiredMixin, FormView):
         """
         Обработка обновления профиля (аватарка, display_name, email)
         """
+        from utils.file_system import FileUploadHandler, FileUploadError, DirectoryManager
+        
         user = request.user
         
         # Обновляем поля профиля
@@ -340,18 +360,29 @@ class SettingsView(LoginRequiredMixin, FormView):
         if display_name != user.display_name:
             user.display_name = display_name
         
-        # Обновляем аватарку
+        # Обновляем аватарку с использованием новой файловой системы
         if avatar:
-            # Валидация файла
-            if avatar.size > 2 * 1024 * 1024:  # 2MB
-                messages.error(request, "Размер файла не должен превышать 2MB")
+            try:
+                # Создаем папку пользователя если не существует
+                DirectoryManager.create_user_directory(user.id)
+                
+                # Валидируем файл через FileUploadHandler
+                FileUploadHandler.validate_file(
+                    avatar, 
+                    FileUploadHandler.ALLOWED_IMAGE_TYPES, 
+                    FileUploadHandler.MAX_IMAGE_SIZE,
+                    user.id
+                )
+                
+                # Устанавливаем аватарку (путь будет сгенерирован через upload_to)
+                user.avatar = avatar
+                
+            except FileUploadError as e:
+                messages.error(request, f"Ошибка загрузки аватарки: {str(e)}")
                 return HttpResponseRedirect(self.success_url)
-            
-            if not avatar.content_type in ['image/jpeg', 'image/png']:
-                messages.error(request, "Поддерживаются только JPG и PNG файлы")
+            except Exception as e:
+                messages.error(request, "Произошла ошибка при загрузке аватарки")
                 return HttpResponseRedirect(self.success_url)
-            
-            user.avatar = avatar
         
         user.save()
         

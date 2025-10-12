@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} - Тексты - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1200px;">
+    <!-- Breadcrumb навигация -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content:editor' %}">
+                    <i class="fas fa-home me-1"></i>Редактор
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="fas fa-folder me-1"></i>{{ project.name }}
+            </li>
+        </ol>
+    </nav>
+    
+    <!-- Заголовок проекта -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div class="flex-grow-1">
+                            <h2 class="mb-2">
+                                <i class="fas fa-book me-2 text-primary"></i>{{ project.name }}
+                            </h2>
+                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                <span class="badge bg-light text-dark">
+                                    <i class="fas fa-users me-1"></i>{{ project.team.name }}
+                                </span>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-folder me-1"></i>{{ project.content_folder }}
+                                </span>
+                            </div>
+                            {% if project.description %}
+                                <p class="text-muted mb-0">{{ project.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'content:text_editor' %}" class="btn btn-primary"
+                               data-bs-toggle="tooltip" 
+                               data-bs-placement="top" 
+                               title="Создать новый текст в этом проекте">
+                                <i class="fas fa-plus me-2"></i>Новый текст
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Поиск и фильтрация -->
+    <div class="row mb-4">
+        <div class="col-lg-8 col-md-7 mb-3">
+            <form method="get" class="d-flex">
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" 
+                           name="search" 
+                           class="form-control" 
+                           placeholder="Поиск по заголовкам и содержимому..." 
+                           value="{{ search_query }}"
+                           aria-label="Поиск текстов">
+                    <button type="submit" class="btn btn-outline-primary"
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Найти тексты по заголовку и содержимому">
+                        Найти
+                    </button>
+                    {% if search_query %}
+                        <a href="{% url 'content:project_texts' project.id %}" 
+                           class="btn btn-outline-danger" 
+                           title="Очистить поиск">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+        <div class="col-lg-4 col-md-5 d-flex align-items-center justify-content-end">
+            <small class="text-muted">
+                {% if search_query %}
+                    <i class="fas fa-search me-1"></i>
+                    Найдено: <strong>{{ page_obj.paginator.count }}</strong> текст(ов) по запросу "<em>{{ search_query }}</em>"
+                {% else %}
+                    <i class="fas fa-file-alt me-1"></i>
+                    Всего текстов: <strong>{{ page_obj.paginator.count }}</strong>
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    
+    <!-- Список текстов -->
+    <div class="row">
+        <div class="col">
+            {% if texts %}
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>Тексты проекта
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for text in texts %}
+                            <div class="d-flex justify-content-between align-items-start p-3 text-content-item {% if not forloop.last %}border-bottom{% endif %}">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-2">
+                                        <a href="{% url 'content:text_editor' text.id %}" 
+                                           class="text-decoration-none text-primary fw-bold">
+                                            <i class="fas fa-file-text me-1"></i>{{ text.title }}
+                                        </a>
+                                    </h6>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>{{ text.author.display_name|default:text.author.username }}
+                                        </small>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>{{ text.updated_at|date:"d.m.Y в H:i" }}
+                                        </small>
+                                        {% if text.is_draft %}
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-edit me-1"></i>Черновик
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i>Опубликован
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if text.content %}
+                                        <p class="mb-0 text-muted small">
+                                            {{ text.content|striptags|truncatewords:25 }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                <div class="ms-3 d-flex flex-column gap-1">
+                                    <a href="{% url 'content:text_editor' text.id %}" 
+                                       class="btn btn-sm btn-outline-primary"
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="top" 
+                                       title="Открыть текст для редактирования">
+                                        <i class="fas fa-edit me-1"></i>Редактировать
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Пагинация -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Навигация по страницам" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}"
+                                       title="Первая страница">
+                                        <i class="fas fa-angle-double-left"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"
+                                       title="Предыдущая страница">
+                                        <i class="fas fa-angle-left"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}"
+                                       title="Следующая страница">
+                                        <i class="fas fa-angle-right"></i>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}"
+                                       title="Последняя страница">
+                                        <i class="fas fa-angle-double-right"></i>
+                                    </a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+                
+            {% else %}
+                <!-- Пустое состояние -->
+                <div class="card shadow-sm">
+                    <div class="card-body text-center py-5">
+                        {% if search_query %}
+                            <i class="fas fa-search fa-4x text-muted mb-4 opacity-50"></i>
+                            <h4 class="text-muted mb-3">Ничего не найдено</h4>
+                            <p class="text-muted mb-4">
+                                По запросу "<strong>{{ search_query }}</strong>" не найдено ни одного текста в проекте "{{ project.name }}".
+                            </p>
+                            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                <a href="{% url 'content:project_texts' project.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-times me-2"></i>Очистить поиск
+                                </a>
+                                <a href="{% url 'content:text_editor' %}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Создать новый текст
+                                </a>
+                            </div>
+                        {% else %}
+                            <i class="fas fa-file-alt fa-4x text-muted mb-4 opacity-50"></i>
+                            <h4 class="text-muted mb-3">В проекте пока нет текстов</h4>
+                            <p class="text-muted mb-4">
+                                Создайте первый текст для проекта "{{ project.name }}", чтобы начать работу.
+                            </p>
+                            <a href="{% url 'content:text_editor' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>Создать первый текст
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Инициализация Bootstrap компонентов -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+<!-- Адаптивные стили -->
+<style>
+.text-content-item {
+    transition: background-color 0.2s ease;
+}
+
+.text-content-item:hover {
+    background-color: #f8f9fa;
+}
+
+/* Оптимизация размеров страницы */
+.container {
+    max-width: 1200px !important;
+}
+
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100% !important;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .d-flex.justify-content-between.align-items-start {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between.align-items-start .ms-3 {
+        margin-left: 0 !important;
+        align-self: stretch;
+    }
+    
+    .d-flex.justify-content-between.align-items-start .btn {
+        width: 100%;
+    }
+    
+    .col-lg-4.col-md-5 {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+    
+    .input-group .btn {
+        white-space: nowrap;
+    }
+    
+    .breadcrumb {
+        font-size: 0.875rem;
+    }
+    
+    .pagination {
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .card-header h5 {
+        font-size: 1rem;
+    }
+    
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .input-group .form-control {
+        font-size: 0.9rem;
+    }
+    
+    .d-flex.flex-wrap.gap-2 {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}

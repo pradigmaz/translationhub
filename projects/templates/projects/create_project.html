@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Создать проект - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Breadcrumb навигация -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      {% if selected_team %}
+        <li class="breadcrumb-item">
+          <a href="{% url 'teams:team_detail' selected_team.id %}">
+            <i class="fas fa-users me-1"></i>{{ selected_team.name }}
+          </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          <i class="fas fa-plus me-1"></i>Новый проект
+        </li>
+      {% else %}
+        <li class="breadcrumb-item">
+          <a href="{% url 'teams:team_list' %}"> 
+            <i class="fas fa-users me-1"></i>Команды 
+          </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          <i class="fas fa-plus me-1"></i>Новый проект
+        </li>
+      {% endif %}
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">
+            <i class="fas fa-plus me-2"></i>Создать новый проект
+            {% if selected_team %}
+              <small class="d-block mt-1 opacity-75">
+                <i class="fas fa-users me-1"></i>для команды "{{ selected_team.name }}"
+              </small>
+            {% endif %}
+          </h4>
+        </div>
+        <div class="card-body">
+          <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            <!-- Название проекта -->
+            <div class="mb-4">
+              <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-tag me-2"></i>Название проекта
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.title }}
+              {% if form.title.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.title.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Введите понятное название для вашего проекта</div>
+            </div>
+
+            <!-- Команда (только если не определена автоматически) -->
+            {% if not selected_team and user_teams_count > 1 %}
+            <div class="mb-4">
+              <label for="{{ form.team.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-users me-2"></i>Команда
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.team }}
+              {% if form.team.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.team.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Выберите команду для проекта</div>
+            </div>
+            {% elif selected_team %}
+            <!-- Показываем выбранную команду как информацию -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">
+                <i class="fas fa-users me-2"></i>Команда
+              </label>
+              <div class="alert alert-info d-flex align-items-center mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <div>
+                  <strong>{{ selected_team.name }}</strong>
+                  <br>
+                  <small class="text-muted">Проект будет создан для этой команды</small>
+                </div>
+              </div>
+              <!-- Скрытое поле для передачи команды -->
+              <input type="hidden" name="team" value="{{ selected_team.id }}">
+            </div>
+            {% endif %}
+
+            <!-- Тип проекта и возрастной рейтинг в одной строке -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <label for="{{ form.project_type.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-book me-2"></i>Тип проекта
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.project_type }}
+                {% if form.project_type.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.project_type.errors %}
+                  <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <label for="{{ form.age_rating.id_for_label }}" class="form-label fw-bold">
+                  <i class="fas fa-shield-alt me-2"></i>Возрастной рейтинг
+                  <span class="text-danger">*</span>
+                </label>
+                {{ form.age_rating }}
+                {% if form.age_rating.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form.age_rating.errors %}
+                  <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Статус проекта -->
+            <div class="mb-4">
+              <label for="{{ form.status.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-flag me-2"></i>Статус проекта
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.status }}
+              {% if form.status.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.status.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                <strong>Переводим</strong> - активная работа над проектом, 
+                <strong>Переведён</strong> - все главы готовы, 
+                <strong>Заморожен</strong> - временная приостановка, 
+                <strong>Заброшен</strong> - работа прекращена
+              </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="mb-4">
+              <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-align-left me-2"></i>Описание
+              </label>
+              {{ form.description }}
+              {% if form.description.errors %}
+              <div class="invalid-feedback d-block">
+                {% for error in form.description.errors %}
+                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                {% endfor %}
+              </div>
+              {% endif %}
+              <div class="form-text">Краткое описание проекта (необязательно)</div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="d-flex flex-column flex-md-row gap-2 justify-content-between align-items-stretch align-items-md-center">
+              {% if selected_team %}
+                <a href="{% url 'teams:team_detail' selected_team.id %}" class="btn btn-secondary">
+                  <i class="fas fa-arrow-left me-2"></i>Назад к команде
+                </a>
+              {% else %}
+                <a href="{% url 'teams:team_list' %}" class="btn btn-secondary">
+                  <i class="fas fa-arrow-left me-2"></i>Назад к командам
+                </a>
+              {% endif %}
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Создать проект
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+.file-system-dashboard {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.file-system-dashboard h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.fs-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.fs-stat-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    text-align: center;
+}
+
+.fs-stat-number {
+    font-size: 1.8em;
+    font-weight: bold;
+    margin: 10px 0;
+}
+
+.fs-stat-number.warning {
+    color: #ffc107;
+}
+
+.fs-stat-number.danger {
+    color: #dc3545;
+}
+
+.fs-stat-number.success {
+    color: #28a745;
+}
+
+.fs-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 20px 0;
+}
+
+.fs-link-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    text-decoration: none;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.fs-link-card:hover {
+    background: #e9ecef;
+    text-decoration: none;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.fs-link-icon {
+    font-size: 2em;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.fs-link-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.fs-link-description {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.disk-usage-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.disk-usage-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.usage-normal { background: #28a745; }
+.usage-warning { background: #ffc107; }
+.usage-critical { background: #dc3545; }
+
+.warning-banner {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #856404;
+}
+
+.warning-banner h4 {
+    margin-top: 0;
+    color: #856404;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>{% trans 'Site administration' %}</h1>
+
+<!-- File System Dashboard -->
+{% if file_system_info %}
+<div class="file-system-dashboard">
+    <h2>💾 Файловая система</h2>
+    
+    {% if file_system_info.has_warnings %}
+    <div class="warning-banner">
+        <h4>⚠ Обнаружены проблемы с файловой системой</h4>
+        <p>Рекомендуется проверить диагностику и выполнить необходимые исправления.</p>
+    </div>
+    {% endif %}
+    
+    <!-- Disk Usage -->
+    {% if file_system_info.disk_usage %}
+    <div class="fs-stat-card">
+        <h3>Использование диска</h3>
+        <div class="fs-stat-number {% if file_system_info.disk_usage.percent_used > 90 %}danger{% elif file_system_info.disk_usage.percent_used > 80 %}warning{% else %}success{% endif %}">
+            {{ file_system_info.disk_usage.percent_used }}%
+        </div>
+        <div class="disk-usage-bar">
+            <div class="disk-usage-fill {% if file_system_info.disk_usage.percent_used > 90 %}usage-critical{% elif file_system_info.disk_usage.percent_used > 80 %}usage-warning{% else %}usage-normal{% endif %}" 
+                 style="width: {{ file_system_info.disk_usage.percent_used }}%"></div>
+        </div>
+        <p>{{ file_system_info.disk_usage.free|filesizeformat }} свободно из {{ file_system_info.disk_usage.total|filesizeformat }}</p>
+    </div>
+    {% endif %}
+    
+    <!-- Structure Stats -->
+    {% if file_system_info.structure_stats %}
+    <div class="fs-stats">
+        <div class="fs-stat-card">
+            <h4>Пользователи</h4>
+            <div class="fs-stat-number">{{ file_system_info.structure_stats.total_users }}</div>
+            <p>{{ file_system_info.structure_stats.users_with_files }} с файлами</p>
+            {% if file_system_info.structure_stats.missing_user_dirs %}
+                <p style="color: #dc3545;">{{ file_system_info.structure_stats.missing_user_dirs|length }} без папок</p>
+            {% endif %}
+        </div>
+        
+        <div class="fs-stat-card">
+            <h4>Команды</h4>
+            <div class="fs-stat-number">{{ file_system_info.structure_stats.total_teams }}</div>
+            <p>{{ file_system_info.structure_stats.teams_with_files }} с файлами</p>
+            {% if file_system_info.structure_stats.missing_team_dirs %}
+                <p style="color: #dc3545;">{{ file_system_info.structure_stats.missing_team_dirs|length }} без папок</p>
+            {% endif %}
+        </div>
+        
+        <div class="fs-stat-card">
+            <h4>Проекты</h4>
+            <div class="fs-stat-number">{{ file_system_info.structure_stats.total_projects }}</div>
+            <p>{{ file_system_info.structure_stats.projects_with_files }} с файлами</p>
+            {% if file_system_info.structure_stats.missing_project_dirs %}
+                <p style="color: #dc3545;">{{ file_system_info.structure_stats.missing_project_dirs|length }} без папок</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Quick Links -->
+    <div class="fs-links">
+        {% for link in file_system_links %}
+        <a href="{{ link.url }}" class="fs-link-card">
+            <span class="fs-link-icon">{{ link.icon }}</span>
+            <div class="fs-link-title">{{ link.title }}</div>
+            <div class="fs-link-description">{{ link.description }}</div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% elif file_system_error %}
+<div class="file-system-dashboard">
+    <h2>💾 Файловая система</h2>
+    <div class="warning-banner">
+        <h4>❌ Ошибка получения информации о файловой системе</h4>
+        <p>{{ file_system_error }}</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Standard Django Admin Content -->
+<div id="content-main">
+    {% if app_list %}
+        {% for app in app_list %}
+            <div class="app-{{ app.app_label }} module">
+                <table>
+                    <caption>
+                        <a href="{{ app.app_url }}" class="section" title="{% blocktrans with name=app.name %}Models in the {{ name }} application{% endblocktrans %}">{{ app.name }}</a>
+                    </caption>
+                    {% for model in app.models %}
+                        <tr class="model-{{ model.object_name|lower }}">
+                            {% if model.admin_url %}
+                                <th scope="row"><a href="{{ model.admin_url }}">{{ model.name }}</a></th>
+                            {% else %}
+                                <th scope="row">{{ model.name }}</th>
+                            {% endif %}
+
+                            {% if model.add_url %}
+                                <td><a href="{{ model.add_url }}" class="addlink">{% trans 'Add' %}</a></td>
+                            {% else %}
+                                <td>&nbsp;</td>
+                            {% endif %}
+
+                            {% if model.admin_url %}
+                                {% if model.view_only %}
+                                    <td><a href="{{ model.admin_url }}" class="viewlink">{% trans 'View' %}</a></td>
+                                {% else %}
+                                    <td><a href="{{ model.admin_url }}" class="changelink">{% trans 'Change' %}</a></td>
+                                {% endif %}
+                            {% else %}
+                                <td>&nbsp;</td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>{% trans "You don't have permission to view or edit anything." %}</p>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block sidebar %}
+<div id="content-related">
+    <div class="module" id="recent-actions-module">
+        <h2>{% trans 'Recent actions' %}</h2>
+        <h3>{% trans 'My actions' %}</h3>
+            {% load log %}
+            {% get_admin_log 10 as admin_log for_user user %}
+            {% if not admin_log %}
+            <p>{% trans 'None available' %}</p>
+            {% else %}
+            <ul class="actionlist">
+            {% for entry in admin_log %}
+            <li class="{% if entry.is_addition %}addlink{% endif %}{% if entry.is_change %}changelink{% endif %}{% if entry.is_deletion %}deletelink{% endif %}">
+                {% if entry.is_deletion or not entry.get_admin_url %}
+                    {{ entry.object_repr }}
+                {% else %}
+                    <a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>
+                {% endif %}
+                <br>
+                {% if entry.content_type %}
+                    <span class="mini quiet">{% filter capfirst %}{{ entry.content_type.name }}{% endfilter %}</span>
+                {% else %}
+                    <span class="mini quiet">{% trans 'Unknown content' %}</span>
+                {% endif %}
+            </li>
+            {% endfor %}
+            </ul>
+            {% endif %}
+    </div>
+</div>
+{% endblock %}

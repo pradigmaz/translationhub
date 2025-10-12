@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Контент недоступен{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Контент недоступен
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        {{ message }}
+                    </div>
+                    
+                    {% if available_projects %}
+                    <div class="mt-4">
+                        <h5>Доступные проекты:</h5>
+                        <div class="row">
+                            {% for project in available_projects %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ project.name }}</h6>
+                                        <p class="card-text text-muted">{{ project.team.name }}</p>
+                                        <a href="{% url 'content:project_texts' project.id %}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-folder-open"></i>
+                                            Открыть проект
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if recent_texts %}
+                    <div class="mt-4">
+                        <h5>Ваши последние тексты:</h5>
+                        <div class="list-group">
+                            {% for text in recent_texts %}
+                            <a href="{% url 'content:text_editor' text.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ text.title }}</h6>
+                                    <small>{{ text.updated_at|date:"d.m.Y H:i" }}</small>
+                                </div>
+                                <p class="mb-1 text-muted">{{ text.project.name }}</p>
+                                <small>
+                                    {% if text.is_draft %}
+                                        <span class="badge bg-warning">Черновик</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Опубликован</span>
+                                    {% endif %}
+                                </small>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <h5>Что вы можете сделать:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-plus-circle fa-2x text-primary mb-2"></i>
+                                        <h6>Создать новый текст</h6>
+                                        <a href="{% url 'content:text_editor' %}" class="btn btn-primary btn-sm">
+                                            Создать
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-folder-plus fa-2x text-success mb-2"></i>
+                                        <h6>Создать новый проект</h6>
+                                        <a href="{% url 'content:create_project' %}" class="btn btn-success btn-sm">
+                                            Создать
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-compass"></i>
+                        Навигация
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'content:editor' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-home"></i>
+                            Главная редактора
+                        </a>
+                        
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-users"></i>
+                            Мои команды
+                        </a>
+                        {% endif %}
+                        
+                        <a href="/" class="btn btn-outline-info">
+                            <i class="fas fa-globe"></i>
+                            Главная сайта
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb"></i>
+                        Подсказка
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">
+                        Если вы не видите нужный проект или текст, убедитесь, что вы являетесь 
+                        активным участником соответствующей команды.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

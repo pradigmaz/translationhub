@@ -55,7 +55,7 @@
     </div>
 
     <!-- Управление статусом команды с улучшенными Bootstrap 5.3 компонентами -->
-    {% if can_manage_team and team.status != 'disbanded' %}
+    {% if can_manage_team and can_manage_team_permission and team.status != 'disbanded' %}
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-header text-bg-primary border-0 rounded-top">
             <h3 class="card-title h5 mb-0 fw-bold">
@@ -704,16 +704,26 @@
                                                 </div>
                                                 
                                                 <!-- Кнопки управления участником -->
-                                                {% if is_creator and membership.user != team.creator %}
+                                                {% if membership.user != team.creator %}
                                                     <div class="ms-2">
                                                         <div class="dropdown">
-                                                            <button class="btn btn-outline-secondary btn-sm" 
-                                                                    type="button" 
-                                                                    disabled
-                                                                    data-bs-toggle="tooltip" 
-                                                                    title="Функция будет доступна в следующих версиях">
-                                                                <i class="fas fa-ellipsis-v"></i>
-                                                            </button>
+                                                            {% if can_remove_members or can_assign_roles %}
+                                                                <button class="btn btn-outline-secondary btn-sm" 
+                                                                        type="button" 
+                                                                        disabled
+                                                                        data-bs-toggle="tooltip" 
+                                                                        title="Функция будет доступна в следующих версиях">
+                                                                    <i class="fas fa-ellipsis-v"></i>
+                                                                </button>
+                                                            {% else %}
+                                                                <button class="btn btn-outline-secondary btn-sm" 
+                                                                        type="button" 
+                                                                        disabled
+                                                                        data-bs-toggle="tooltip" 
+                                                                        title="У вас нет прав для управления участниками">
+                                                                    <i class="fas fa-lock"></i>
+                                                                </button>
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 {% endif %}
@@ -723,6 +733,88 @@
                                 </div>
                             {% endfor %}
                         </div>
+                        
+                        <!-- Информация о разрешениях пользователя -->
+                        {% if user_membership and user_permissions %}
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-0 bg-light">
+                                    <div class="card-body p-3">
+                                        <h6 class="card-title text-primary mb-3">
+                                            <i class="fas fa-shield-alt me-2"></i>
+                                            Ваши разрешения в команде
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_manage_team_permission %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Управление командой</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Управление командой</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_invite_members %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Приглашение участников</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Приглашение участников</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_assign_roles %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Назначение ролей</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Назначение ролей</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_create_project %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Создание проектов</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Создание проектов</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_manage_project %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Управление проектами</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Управление проектами</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    {% if can_remove_members %}
+                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <span class="text-success">Удаление участников</span>
+                                                    {% else %}
+                                                        <i class="fas fa-times-circle text-muted me-2"></i>
+                                                        <span class="text-muted">Удаление участников</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Разрешения определяются вашими ролями в команде
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <!-- Дополнительная информация о команде -->
                         <div class="row mt-4">
@@ -754,15 +846,29 @@
                             </div>
                             <h5 class="text-muted mb-3">В команде пока нет участников</h5>
                             <p class="text-muted mb-4">Пригласите коллег для совместной работы над проектами</p>
-                            <button class="btn btn-outline-primary btn-lg" disabled>
-                                <i class="fas fa-user-plus me-2"></i>Пригласить участников
-                            </button>
-                            <div class="mt-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Функция приглашения будет доступна в следующих версиях
-                                </small>
-                            </div>
+                            {% if can_invite_members %}
+                                <button class="btn btn-outline-primary btn-lg" disabled>
+                                    <i class="fas fa-user-plus me-2"></i>Пригласить участников
+                                </button>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Функция приглашения будет доступна в следующих версиях
+                                    </small>
+                                </div>
+                            {% else %}
+                                <button class="btn btn-outline-secondary btn-lg" disabled 
+                                        data-bs-toggle="tooltip" 
+                                        title="У вас нет разрешения на приглашение участников">
+                                    <i class="fas fa-lock me-2"></i>Пригласить участников
+                                </button>
+                                <div class="mt-2">
+                                    <small class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Недостаточно прав для приглашения участников
+                                    </small>
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
@@ -799,26 +905,43 @@
                                         <div class="card-body p-3">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 <h6 class="card-title mb-0 fw-bold text-truncate me-2">
-                                                    <a href="#" class="text-decoration-none text-dark">
+                                                    <a href="{% url 'projects:project_detail' project.id %}" 
+                                                       class="text-decoration-none text-dark">
                                                         {{ project.title }}
                                                     </a>
                                                 </h6>
-                                                <span class="badge text-bg-secondary rounded-pill px-2 py-1 flex-shrink-0">
-                                                    {{ project.get_status_display }}
+                                                <span class="{{ project.get_status_badge_class }} rounded-pill px-2 py-1 flex-shrink-0">
+                                                    <i class="{{ project.get_status_icon }} me-1"></i>{{ project.get_status_display }}
                                                 </span>
                                             </div>
+                                            {% if project.description %}
+                                                <p class="card-text text-muted small mb-2">
+                                                    {{ project.description|truncatechars:80 }}
+                                                </p>
+                                            {% endif %}
                                             <p class="card-text text-muted small mb-2">
                                                 <i class="fas fa-calendar-alt me-1"></i>
                                                 Создан: {{ project.created_at|date:"d.m.Y" }}
                                             </p>
+                                            <p class="card-text text-muted small mb-3">
+                                                <i class="fas fa-folder me-1"></i>
+                                                Папка: {{ project.content_folder }}
+                                            </p>
                                             <div class="d-flex justify-content-between align-items-center">
                                                 <small class="text-muted">
-                                                    <i class="fas fa-tasks me-1"></i>
-                                                    Активный проект
+                                                    <i class="fas fa-book me-1"></i>
+                                                    {{ project.chapters.count }} глав
                                                 </small>
-                                                <a href="#" class="btn btn-sm btn-outline-primary" disabled>
-                                                    <i class="fas fa-eye me-1"></i>Просмотр
-                                                </a>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'projects:project_detail' project.id %}" 
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i>Подробнее
+                                                    </a>
+                                                    <a href="{% url 'projects:edit_project' project.id %}" 
+                                                       class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-edit me-1"></i>Редактировать
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -826,18 +949,30 @@
                             {% endfor %}
                         </div>
                         
-                        <div class="mt-4">
-                            <div class="alert alert-light border-start border-4 border-primary" role="alert">
+                        <div class="mt-4 d-flex justify-content-between align-items-center">
+                            <div class="alert alert-success border-start border-4 border-success flex-grow-1 me-3" role="alert">
                                 <div class="d-flex align-items-center">
-                                    <i class="fas fa-lightbulb text-primary fs-4 me-3"></i>
+                                    <i class="fas fa-check-circle text-success fs-4 me-3"></i>
                                     <div>
-                                        <h6 class="alert-heading mb-1">Управление проектами</h6>
+                                        <h6 class="alert-heading mb-1">Управление проектами активно</h6>
                                         <p class="mb-0">
-                                            Функции создания и управления проектами будут доступны в следующих версиях системы.
+                                            Вы можете создавать и управлять проектами команды.
                                         </p>
                                     </div>
                                 </div>
                             </div>
+                            {% if team.status == 'active' and user_membership and user_membership.is_active and can_create_project %}
+                                <a href="{% url 'projects:create_project' %}?team={{ team.id }}" 
+                                   class="btn btn-primary btn-lg shadow-sm">
+                                    <i class="fas fa-plus me-2"></i>Создать проект
+                                </a>
+                            {% elif team.status == 'active' and user_membership and user_membership.is_active and not can_create_project %}
+                                <button class="btn btn-outline-secondary btn-lg" disabled 
+                                        data-bs-toggle="tooltip" 
+                                        title="У вас нет разрешения на создание проектов в этой команде">
+                                    <i class="fas fa-lock me-2"></i>Создать проект
+                                </button>
+                            {% endif %}
                         </div>
                     {% else %}
                         <div class="text-center py-5">
@@ -846,20 +981,51 @@
                             </div>
                             <h5 class="text-muted mb-3">У команды пока нет проектов</h5>
                             <p class="text-muted mb-4">Создайте первый проект для совместной работы</p>
-                            <button class="btn btn-outline-primary btn-lg" disabled>
-                                <i class="fas fa-plus me-2"></i>Создать проект
-                            </button>
-                            <div class="mt-3">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Функция создания проектов будет доступна в следующих версиях
-                                </small>
-                            </div>
+                            {% if team.status == 'active' and user_membership and user_membership.is_active and can_create_project %}
+                                <a href="{% url 'projects:create_project' %}?team={{ team.id }}" 
+                                   class="btn btn-primary btn-lg shadow-sm">
+                                    <i class="fas fa-plus me-2"></i>Создать проект
+                                </a>
+                                <div class="mt-3">
+                                    <small class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Функция создания проектов активна
+                                    </small>
+                                </div>
+                            {% elif team.status == 'active' and user_membership and user_membership.is_active and not can_create_project %}
+                                <button class="btn btn-outline-secondary btn-lg" disabled 
+                                        data-bs-toggle="tooltip" 
+                                        title="У вас нет разрешения на создание проектов в этой команде">
+                                    <i class="fas fa-lock me-2"></i>Создать проект
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Недостаточно прав для создания проектов
+                                    </small>
+                                </div>
+                            {% else %}
+                                <button class="btn btn-outline-secondary btn-lg" disabled
+                                    <i class="fas fa-plus me-2"></i>Создать проект
+                                </button>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        {% if team.status != 'active' %}
+                                            Команда должна быть активной для создания проектов
+                                        {% elif not user_membership or not user_membership.is_active %}
+                                            Только активные участники команды могут создавать проекты
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+
 </div>
 {% endblock %}

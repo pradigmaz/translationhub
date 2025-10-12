@@ -38,74 +38,78 @@ def get_env_variable(var_name, default=None):
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Убираем небезопасный fallback ключ
-SECRET_KEY = get_env_variable('SECRET_KEY')
+SECRET_KEY = get_env_variable("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # По умолчанию DEBUG = False для безопасности
-DEBUG = get_env_variable('DEBUG', 'False').lower() == 'true'
+DEBUG = get_env_variable("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    
-    'background_task',
-    
-    'core.apps.CoreConfig',  # Добавляем core app для доступа к template tags
-    'users.apps.UsersConfig', 
-    'teams.apps.TeamsConfig',
-    'projects.apps.ProjectsConfig',
-    'glossary.apps.GlossaryConfig',
-    'notifications.apps.NotificationsConfig'
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "background_task",
+    "tinymce",  # TinyMCE редактор
+    "core.apps.CoreConfig",  # Добавляем core app для доступа к template tags
+    "users.apps.UsersConfig",
+    "teams.apps.TeamsConfig",
+    "projects.apps.ProjectsConfig",
+    "glossary.apps.GlossaryConfig",
+    "notifications.apps.NotificationsConfig",
+    "content.apps.ContentConfig",  # Новое приложение для редактора контента
+    "utils.apps.UtilsConfig",  # Утилиты для управления файловой структурой
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'core.middleware.SecurityMiddleware',  # Кастомный middleware безопасности
-    'core.middleware.RateLimitMiddleware',  # Ограничение частоты запросов
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "core.middleware.SecurityMiddleware",  # Кастомный middleware безопасности
+    "core.middleware.RateLimitMiddleware",  # Ограничение частоты запросов
+    "content.performance.QueryProfilerMiddleware",  # Профилирование запросов (только в DEBUG)
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "teams.middleware.TeamPermissionMiddleware",  # Обработка ошибок разрешений команд
+    "content.middleware.ContentAuditMiddleware",  # Аудит действий с контентом
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'core.urls'
+ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'core.wsgi.application'
+WSGI_APPLICATION = "core.wsgi.application"
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -115,29 +119,60 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-        'OPTIONS': {
-            'min_length': 12,  # Увеличиваем минимальную длину пароля
-        }
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {
+            "min_length": 12,  # Увеличиваем минимальную длину пароля
+        },
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+# Cache configuration
+# https://docs.djangoproject.com/en/5.2/topics/cache/
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "content-cache",
+        "TIMEOUT": 300,  # 5 минут по умолчанию
+        "OPTIONS": {
+            "MAX_ENTRIES": 1000,
+            "CULL_FREQUENCY": 3,
+        },
+    }
+}
+
+# Для продакшена рекомендуется использовать Redis:
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#         'LOCATION': 'redis://127.0.0.1:6379/1',
+#         'TIMEOUT': 300,
+#         'OPTIONS': {
+#             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+#         }
+#     }
+# }
+
+# Cache key prefixes для избежания конфликтов
+CACHE_MIDDLEWARE_KEY_PREFIX = "translationhub"
+CACHE_MIDDLEWARE_SECONDS = 300
 
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'ru-ru'
+LANGUAGE_CODE = "ru-ru"
 
-TIME_ZONE = 'Europe/Moscow'
+TIME_ZONE = "Europe/Moscow"
 
 USE_I18N = True
 
@@ -147,18 +182,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = "static/"
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static')
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Папка для сбора статических файлов в продакшн
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Media files (User uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Максимальный размер загружаемых файлов (2MB для аватарок)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2MB
@@ -167,24 +200,26 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024  # 2MB
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = "users.User"
 
-LOGIN_REDIRECT_URL = 'users:dashboard'
-LOGOUT_REDIRECT_URL = 'main_page'
+LOGIN_REDIRECT_URL = "users:dashboard"
+LOGOUT_REDIRECT_URL = "main_page"
 
 # Настройки безопасности
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = "DENY"
 
 # Дополнительные настройки безопасности
 SECURE_SSL_REDIRECT = not DEBUG  # Принудительный HTTPS в продакшене
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0  # HTTP Strict Transport Security (1 год)
+SECURE_HSTS_SECONDS = (
+    31536000 if not DEBUG else 0
+)  # HTTP Strict Transport Security (1 год)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG  # HSTS для поддоменов
 SECURE_HSTS_PRELOAD = not DEBUG  # HSTS preload
-SECURE_REFERRER_POLICY = 'same-origin'  # Referrer Policy
+SECURE_REFERRER_POLICY = "same-origin"  # Referrer Policy
 
 # Настройки сессий
 SESSION_COOKIE_SECURE = not DEBUG
@@ -196,50 +231,124 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # Сессия закрывается п
 SESSION_SAVE_EVERY_REQUEST = True  # Обновляем время сессии при каждом запросе
 
 # Настройки медиафайлов
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Создаем директорию для логов если её нет
-LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
 # Настройки логирования безопасности
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'security_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': LOGS_DIR / 'security.log',
-            'formatter': 'verbose',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
         },
     },
-    'loggers': {
-        'security': {
-            'handlers': ['security_file', 'console'],
-            'level': 'INFO',
-            'propagate': False,
+    "handlers": {
+        "security_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "security.log",
+            "formatter": "verbose",
         },
-        'django.security': {
-            'handlers': ['security_file'],
-            'level': 'INFO',
-            'propagate': False,
+        "content_audit_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "content_audit.log",
+            "formatter": "verbose",
+        },
+        "file_operations_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "file_operations.log",
+            "formatter": "verbose",
+        },
+        "role_audit_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOGS_DIR / "role_audit.log",
+            "formatter": "verbose",
+        },
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "security": {
+            "handlers": ["security_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.security": {
+            "handlers": ["security_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "content.audit": {
+            "handlers": ["content_audit_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "file_operations": {
+            "handlers": ["file_operations_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "file_monitoring": {
+            "handlers": ["file_operations_file", "console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "utils.signals": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "teams.role_audit": {
+            "handlers": ["role_audit_file", "console"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
+# Настройки TinyMCE
+TINYMCE_DEFAULT_CONFIG = {
+    "theme": "silver",
+    "height": 500,
+    "menubar": False,
+    "plugins": "advlist,autolink,lists,link,charmap,preview,anchor,"
+    "searchreplace,visualblocks,code,fullscreen,insertdatetime,"
+    "table,code,help,wordcount,save",
+    "toolbar": "undo redo | blocks | "
+    "bold italic underline strikethrough | alignleft aligncenter "
+    "alignright alignjustify | bullist numlist outdent indent | "
+    "removeformat | link | code | save | help",
+    "content_style": "body { font-family: -apple-system, BlinkMacSystemFont, "
+    "San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; "
+    "font-size: 14px; -webkit-font-smoothing: antialiased; }",
+    "browser_spellcheck": True,
+    "contextmenu": False,
+    "custom_undo_redo_levels": 10,
+    "language": "ru",
+    "directionality": "ltr",
+    # Автосохранение
+    "autosave_ask_before_unload": True,
+    "autosave_interval": "30s",
+    "autosave_prefix": "tinymce-autosave-{path}{query}-{id}-",
+    "autosave_restore_when_empty": False,
+    "autosave_retention": "2m",
+}
+
+# Настройки для загрузки изображений в контенте
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB для изображений
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10MB для изображений

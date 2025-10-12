@@ -25,11 +25,242 @@ class TeamStatusChangeType(models.TextChoices):
 class Role(models.Model):
     """Модель для хранения возможных ролей (Переводчик, Клинер и т.д.)."""
 
-    name = models.CharField(max_length=50, unique=True, help_text="Изменение роли")
-    description = models.TextField(blank=True, help_text="Описание роли")
+    name = models.CharField(max_length=50, unique=True, verbose_name="Название роли")
+    description = models.TextField(blank=True, verbose_name="Описание роли")
+    permissions = models.ManyToManyField(
+        'auth.Permission',
+        blank=True,
+        related_name='roles',
+        verbose_name="Разрешения",
+        help_text="Разрешения, назначенные этой роли"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        verbose_name="Стандартная роль",
+        help_text="Является ли роль стандартной (создается автоматически)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Создана")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Обновлена")
+
+    class Meta:
+        verbose_name = "Роль"
+        verbose_name_plural = "Роли"
+        ordering = ['name']
+        permissions = [
+            # Разрешения для команд
+            ("can_manage_team", "Может управлять командой"),
+            ("can_invite_members", "Может приглашать участников"),
+            ("can_remove_members", "Может удалять участников"),
+            ("can_assign_roles", "Может назначать роли"),
+            ("can_change_team_status", "Может изменять статус команды"),
+            
+            # Разрешения для проектов
+            ("can_create_project", "Может создавать проекты"),
+            ("can_manage_project", "Может управлять проектами"),
+            ("can_delete_project", "Может удалять проекты"),
+            ("can_assign_chapters", "Может назначать главы"),
+            
+            # Разрешения для контента
+            ("can_edit_content", "Может редактировать контент"),
+            ("can_review_content", "Может рецензировать контент"),
+            ("can_publish_content", "Может публиковать контент"),
+        ]
+
+    def get_permission_names(self):
+        """Возвращает список названий разрешений"""
+        return list(self.permissions.values_list('codename', flat=True))
+        
+    def has_permission(self, permission_codename):
+        """Проверяет наличие конкретного разрешения"""
+        return self.permissions.filter(codename=permission_codename).exists()
+    
+    def add_permission(self, permission_codename):
+        """Добавляет разрешение к роли"""
+        from django.contrib.auth.models import Permission
+        try:
+            permission = Permission.objects.get(codename=permission_codename)
+            self.permissions.add(permission)
+            return True
+        except Permission.DoesNotExist:
+            return False
+    
+    def remove_permission(self, permission_codename):
+        """Удаляет разрешение из роли"""
+        from django.contrib.auth.models import Permission
+        try:
+            permission = Permission.objects.get(codename=permission_codename)
+            self.permissions.remove(permission)
+            return True
+        except Permission.DoesNotExist:
+            return False
+    
+    def get_permission_count(self):
+        """Возвращает количество разрешений у роли"""
+        return self.permissions.count()
+    
+    def get_usage_count(self):
+        """Возвращает количество использований роли (участников с этой ролью)"""
+        return TeamMembership.objects.filter(roles=self).count()
+    
+    def save(self, *args, **kwargs):
+        """Переопределяем save для логирования изменений"""
+        from .audit_logger import RoleAuditLogger
+        
+        # Определяем, создается ли новая роль или обновляется существующая
+        is_new = self.pk is None
+        
+        # Если это обновление, получаем старые значения для сравнения
+        old_instance = None
+        if not is_new:
+            try:
+                old_instance = Role.objects.get(pk=self.pk)
+            except Role.DoesNotExist:
+                pass
+        
+        # Сохраняем объект
+        super().save(*args, **kwargs)
+        
+        # Логируем изменения
+        if is_new:
+            # Логируем создание новой роли
+            permissions = list(self.permissions.values_list('codename', flat=True))
+            RoleAuditLogger.log_role_created(
+                user=getattr(self, '_audit_user', None),
+                role_name=self.name,
+                description=self.description,
+                permissions=permissions,
+                is_default=self.is_default
+            )
+        elif old_instance:
+            # Логируем изменения существующей роли
+            changes = {}
+            
+            if old_instance.name != self.name:
+                changes['name'] = (old_instance.name, self.name)
+            
+            if old_instance.description != self.description:
+                changes['description'] = (old_instance.description, self.description)
+            
+            if old_instance.is_default != self.is_default:
+                changes['is_default'] = (old_instance.is_default, self.is_default)
+            
+            # Проверяем изменения в разрешениях
+            old_permissions = set(old_instance.permissions.values_list('codename', flat=True))
+            new_permissions = set(self.permissions.values_list('codename', flat=True))
+            
+            if old_permissions != new_permissions:
+                changes['permissions'] = (list(old_permissions), list(new_permissions))
+            
+            if changes:
+                RoleAuditLogger.log_role_updated(
+                    user=getattr(self, '_audit_user', None),
+                    role_name=self.name,
+                    changes=changes
+                )
+    
+    def delete(self, *args, **kwargs):
+        """Переопределяем delete для логирования удаления"""
+        from .audit_logger import RoleAuditLogger
+        
+        # Сохраняем информацию перед удалением
+        role_name = self.name
+        usage_count = self.get_usage_count()
+        permissions = list(self.permissions.values_list('codename', flat=True))
+        
+        # Удаляем объект
+        super().delete(*args, **kwargs)
+        
+        # Логируем удаление
+        RoleAuditLogger.log_role_deleted(
+            user=getattr(self, '_audit_user', None),
+            role_name=role_name,
+            usage_count=usage_count,
+            permissions=permissions
+        )
+    
+    @classmethod
+    def ensure_default_roles_exist(cls):
+        """
+        Создает стандартные роли если они не существуют.
+        
+        Использует DefaultRoleManager для создания стандартных ролей системы.
+        
+        Returns:
+            dict: Результаты создания ролей
+        """
+        from .role_manager import DefaultRoleManager
+        return DefaultRoleManager.ensure_default_roles_exist()
 
     def __str__(self):
         return self.name
+
+
+class UserRole(models.Model):
+    """
+    Модель для хранения глобальных ролей пользователей (не привязанных к командам).
+    
+    Используется для:
+    - Назначения дефолтной роли новым пользователям
+    - Отслеживания глобального статуса пользователя в системе
+    - Управления базовыми разрешениями пользователя
+    """
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE,
+        related_name='global_roles',
+        verbose_name="Пользователь"
+    )
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name='global_users',
+        verbose_name="Роль"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Активна",
+        help_text="Активна ли роль для пользователя"
+    )
+    assigned_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Назначена"
+    )
+    assigned_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_global_roles',
+        verbose_name="Назначена пользователем"
+    )
+    
+    class Meta:
+        unique_together = ('user', 'role')
+        verbose_name = "Глобальная роль пользователя"
+        verbose_name_plural = "Глобальные роли пользователей"
+        indexes = [
+            models.Index(fields=['user', 'is_active']),
+            models.Index(fields=['role', 'is_active']),
+        ]
+    
+    def deactivate(self, deactivated_by=None):
+        """Деактивирует роль пользователя"""
+        self.is_active = False
+        if deactivated_by:
+            self.assigned_by = deactivated_by
+        self.save()
+    
+    def reactivate(self, reactivated_by=None):
+        """Реактивирует роль пользователя"""
+        self.is_active = True
+        if reactivated_by:
+            self.assigned_by = reactivated_by
+        self.save()
+    
+    def __str__(self):
+        status = "активна" if self.is_active else "неактивна"
+        return f"{self.user.username} - {self.role.name} ({status})"
 
 
 class Team(models.Model):
@@ -50,8 +281,8 @@ class Team(models.Model):
         default=TeamStatus.ACTIVE,
         help_text="Текущий статус команды"
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
     class Meta:
         indexes = [
@@ -112,6 +343,32 @@ class TeamMembership(models.Model):
         """Реактивирует участника команды"""
         self.is_active = True
         self.save()
+    
+    def add_role(self, role, admin_user=None):
+        """Добавляет роль участнику с логированием"""
+        from .audit_logger import RoleAuditLogger
+        
+        if role not in self.roles.all():
+            self.roles.add(role)
+            RoleAuditLogger.log_role_assigned_to_user(
+                admin_user=admin_user,
+                target_user=self.user,
+                role_name=role.name,
+                team_name=self.team.name
+            )
+    
+    def remove_role(self, role, admin_user=None):
+        """Удаляет роль у участника с логированием"""
+        from .audit_logger import RoleAuditLogger
+        
+        if role in self.roles.all():
+            self.roles.remove(role)
+            RoleAuditLogger.log_role_removed_from_user(
+                admin_user=admin_user,
+                target_user=self.user,
+                role_name=role.name,
+                team_name=self.team.name
+            )
 
     def __str__(self):
         role_names = ", ".join([role.name for role in self.roles.all()])

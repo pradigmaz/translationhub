@@ -1,0 +1,265 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Редактор контента - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1400px;">
+    <div class="row">
+        <!-- Сайдбар с проектами -->
+        <div class="col-xl-3 col-lg-4 col-md-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-folder me-2"></i>Мои проекты
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if projects %}
+                        <div class="list-group list-group-flush">
+                            {% for project in projects %}
+                            <a href="{% url 'content:project_texts' project.id %}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">
+                                        <i class="fas fa-book me-2 text-primary"></i>{{ project.name }}
+                                    </div>
+                                    <small class="text-muted">{{ project.team.name }}</small>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill">{{ project.textcontent_set.count }}</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-center text-muted">
+                            <i class="fas fa-folder-open fa-3x mb-3 d-block opacity-50"></i>
+                            <p class="mb-0">У вас пока нет проектов</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'content:create_project' %}" class="btn btn-success w-100"
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="Создать новый проект для организации контента">
+                        <i class="fas fa-plus me-2"></i>Новый проект
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="col-xl-9 col-lg-8 col-md-12">
+            <!-- Заголовок и кнопка создания -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-edit me-2 text-primary"></i>Редактор контента
+                </h2>
+                <a href="{% url 'content:text_editor' %}" class="btn btn-primary"
+                   data-bs-toggle="tooltip" 
+                   data-bs-placement="top" 
+                   title="Создать новый текст в любом из ваших проектов">
+                    <i class="fas fa-plus me-2"></i>Новый текст
+                </a>
+            </div>
+            
+            <!-- Последние тексты -->
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Последние тексты
+                    </h5>
+                    <small class="text-muted">Показаны последние 5 текстов</small>
+                </div>
+                <div class="card-body">
+                    {% if recent_texts %}
+                        <div class="row g-3">
+                            {% for text in recent_texts %}
+                            <div class="col-12">
+                                <div class="card border-start border-4 {% if text.is_draft %}border-warning{% else %}border-success{% endif %}">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="flex-grow-1">
+                                                <h6 class="card-title mb-2">
+                                                    <i class="fas fa-file-text me-2"></i>{{ text.title }}
+                                                </h6>
+                                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                                    <span class="badge bg-light text-dark">
+                                                        <i class="fas fa-folder me-1"></i>{{ text.project.name }}
+                                                    </span>
+                                                    {% if text.is_draft %}
+                                                        <span class="badge bg-warning">
+                                                            <i class="fas fa-edit me-1"></i>Черновик
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-check me-1"></i>Опубликован
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Обновлен {{ text.updated_at|date:"d.m.Y в H:i" }}
+                                                </small>
+                                            </div>
+                                            <div class="ms-3">
+                                                <a href="{% url 'content:text_editor' text.id %}" 
+                                                   class="btn btn-outline-primary btn-sm"
+                                                   data-bs-toggle="tooltip" 
+                                                   data-bs-placement="top" 
+                                                   title="Открыть текст для редактирования">
+                                                    <i class="fas fa-edit me-1"></i>Редактировать
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Ссылка на все тексты -->
+                        <div class="text-center mt-4">
+                            <a href="#" class="btn btn-outline-secondary">
+                                <i class="fas fa-list me-2"></i>Показать все тексты
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-file-alt fa-4x mb-3 text-muted opacity-50"></i>
+                            <h5 class="text-muted mb-3">У вас пока нет текстов</h5>
+                            <p class="text-muted mb-4">Создайте свой первый текст, чтобы начать работу</p>
+                            <a href="{% url 'content:text_editor' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Создать первый текст
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Инициализация Bootstrap компонентов -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+
+<!-- Оптимизированные стили для лучшего восприятия -->
+<style>
+/* Ограничиваем максимальную ширину контента */
+.container {
+    max-width: 1400px !important;
+}
+
+/* Улучшаем отступы для карточек */
+.card {
+    margin-bottom: 1.5rem;
+}
+
+/* Оптимизируем размеры текста */
+.card-title {
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+/* Улучшаем читаемость бейджей */
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Адаптивные стили */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 100% !important;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .col-xl-3.col-lg-4 {
+        margin-bottom: 2rem;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+    
+    .d-flex.justify-content-between .btn {
+        align-self: stretch;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .card-body .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 1rem;
+    }
+    
+    .card-body .ms-3 {
+        margin-left: 0 !important;
+        margin-top: 0;
+    }
+    
+    .card-body .btn {
+        width: 100%;
+    }
+    
+    .card-title {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .badge {
+        font-size: 0.7rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Улучшаем визуальное восприятие */
+.list-group-item {
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.list-group-item:hover {
+    border-left-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.card {
+    transition: box-shadow 0.2s ease;
+}
+
+/* Card hover animations removed as per task requirements */
+</style>
+{% endblock %}

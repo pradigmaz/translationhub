@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import TeamDetailView, TeamCreateView, TeamListView, TeamStatusChangeView, TeamStatusHistoryView, TeamCountsView
+from .views import (
+    TeamDetailView, TeamCreateView, TeamListView, TeamStatusChangeView, 
+    TeamStatusHistoryView, TeamCountsView, team_permission_denied_view
+)
 
 app_name = 'teams'
 

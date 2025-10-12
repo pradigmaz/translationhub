@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Доступ запрещен{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Доступ запрещен
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Ошибка доступа:</strong> {{ error_message }}
+                    </div>
+                    
+                    {% if object_type %}
+                    <p class="text-muted">
+                        <small>
+                            Тип объекта: {{ object_type }}
+                            {% if error_type == 'access_denied' %}
+                            | Причина: Недостаточно прав доступа
+                            {% endif %}
+                        </small>
+                    </p>
+                    {% endif %}
+                    
+                    {% if suggestions %}
+                    <div class="mt-4">
+                        <h5>Что можно сделать:</h5>
+                        <ul class="list-group list-group-flush">
+                            {% for suggestion in suggestions %}
+                            <li class="list-group-item border-0 px-0">
+                                <i class="fas fa-lightbulb text-warning me-2"></i>
+                                {{ suggestion }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4 d-flex gap-2">
+                        {% if back_url %}
+                        <a href="{{ back_url }}" class="btn btn-primary">
+                            <i class="fas fa-arrow-left"></i>
+                            Вернуться назад
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'content:editor' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-home"></i>
+                            Главная редактора
+                        </a>
+                        
+                        {% if user.is_authenticated %}
+                        <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-users"></i>
+                            Мои команды
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    {% if user.is_authenticated %}
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6>Информация о пользователе:</h6>
+                        <p class="mb-1"><strong>Пользователь:</strong> {{ user.username }}</p>
+                        <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+                        <p class="mb-0"><strong>Время:</strong> {% now "d.m.Y H:i" %}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Дополнительная помощь -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle"></i>
+                        Нужна помощь?
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>Если вы считаете, что получили эту ошибку по ошибке, вы можете:</p>
+                    <ul>
+                        <li>Обратиться к руководителю вашей команды</li>
+                        <li>Связаться с администратором системы</li>
+                        <li>Проверить настройки вашего аккаунта</li>
+                    </ul>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Совет:</strong> Убедитесь, что вы являетесь активным участником команды, 
+                        которой принадлежит запрашиваемый контент.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card-header.bg-warning {
+    border-bottom: 1px solid #ffc107;
+}
+
+.list-group-item {
+    background-color: transparent;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+</style>
+{% endblock %}

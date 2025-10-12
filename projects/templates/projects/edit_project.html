@@ -1,0 +1,1059 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load form_tags %}
+
+{% block title %}Редактировать {{ project.title }} - TranslationHub{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Дополнительные стили для улучшенной формы редактирования проекта */
+
+/* Улучшенные стили для валидации */
+.form-control.is-valid,
+.form-select.is-valid {
+  border-color: #198754;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='m2.3 6.73.94-.94 1.44 1.44L7.4 4.5l.94.94L4.66 9.17z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 2.4 2.4M8.2 4.6l-2.4 2.4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+/* Анимации для улучшения UX */
+.card {
+  transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.btn {
+  transition: all 0.15s ease-in-out;
+}
+
+.alert {
+  border: none;
+  border-left: 4px solid;
+}
+
+.alert-info {
+  border-left-color: #0dcaf0;
+  background-color: rgba(13, 202, 240, 0.1);
+}
+
+.alert-success {
+  border-left-color: #198754;
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.alert-warning {
+  border-left-color: #ffc107;
+  background-color: rgba(255, 193, 7, 0.1);
+}
+
+.alert-light {
+  border-left-color: #6c757d;
+  background-color: rgba(248, 249, 250, 0.8);
+}
+
+/* Responsive улучшения */
+@media (max-width: 576px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+  }
+  
+  .input-group-text {
+    padding: 0.375rem 0.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  /* На мобильных устройствах делаем карточки полной ширины */
+  .col-lg-6 {
+    margin-bottom: 1.5rem;
+  }
+}
+
+/* Улучшения для accessibility */
+.form-label {
+  font-weight: 500;
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+/* Стили для счетчика символов */
+#description-counter.text-warning {
+  font-weight: 600;
+}
+
+#description-counter.text-danger {
+  font-weight: 700;
+}
+
+/* Улучшенные стили для бейджей */
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.025em;
+}
+
+/* Стили для аккордеона помощи */
+.accordion-button:not(.collapsed) {
+  background-color: rgba(13, 110, 253, 0.1);
+  color: #0d6efd;
+}
+
+.accordion-button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'teams:team_detail' project.team.id %}">
+          <i class="fas fa-users me-1"></i>{{ project.team.name }}
+        </a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'projects:project_detail' project.pk %}">{{ project.title }}</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Редактирование</li>
+    </ol>
+  </nav>
+
+  <!-- Заголовок -->
+  <div class="row mb-4">
+    <div class="col">
+      <h1 class="h2">
+        <i class="fas fa-edit me-2 text-primary"></i>Редактировать проект
+      </h1>
+    </div>
+  </div>
+
+  <!-- Информационный блок с неизменяемыми данными -->
+  <div class="row">
+    <div class="col-lg-6">
+      <!-- Помощь и руководство -->
+      <div class="alert alert-info d-flex align-items-start mb-4" role="alert">
+        <i class="fas fa-lightbulb me-3 mt-1 flex-shrink-0"></i>
+        <div class="flex-grow-1">
+          <h6 class="alert-heading mb-2">
+            <i class="fas fa-question-circle me-1"></i>Нужна помощь с настройками?
+          </h6>
+          <p class="mb-2">
+            <strong>Изменяемые параметры:</strong> название, описание и статус проекта можно изменить в любое время.
+          </p>
+          <p class="mb-2">
+            <strong>Заблокированные параметры:</strong> команда, тип проекта и возрастной рейтинг устанавливаются при создании и не могут быть изменены для обеспечения целостности данных и безопасности контента.
+          </p>
+          <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+            <small class="text-muted">
+              <i class="fas fa-info-circle me-1"></i>
+              Если вам необходимо изменить заблокированные параметры, создайте новый проект с нужными настройками.
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2 text-info"></i>Информация о проекте
+          </h5>
+          <span class="badge bg-light text-dark">
+            <i class="fas fa-lock me-1"></i>Только чтение
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="alert alert-warning d-flex align-items-start mb-3" role="alert">
+            <i class="fas fa-exclamation-triangle me-2 mt-1 flex-shrink-0"></i>
+            <div class="flex-grow-1">
+              <strong>Важно:</strong> Следующие параметры нельзя изменить после создания проекта.
+              <br>
+              <small class="text-muted">
+                Это сделано для предотвращения случайных изменений критически важных характеристик контента и обеспечения безопасности данных.
+              </small>
+            </div>
+          </div>
+          
+          <div class="row g-3">
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="border rounded p-3 h-100">
+                <label class="form-label text-muted small fw-bold">
+                  <i class="fas fa-users me-1"></i>Команда проекта
+                </label>
+                <div class="mt-2">
+                  <span class="badge bg-primary fs-6 d-inline-flex align-items-center">
+                    <i class="fas fa-users me-1"></i>{{ project.team.name }}
+                  </span>
+                </div>
+                <small class="text-muted d-block mt-2">
+                  Определяет права доступа и управления проектом
+                </small>
+              </div>
+            </div>
+            
+            <div class="col-12 col-sm-6 col-lg-4">
+              <div class="border rounded p-3 h-100">
+                <label class="form-label text-muted small fw-bold">
+                  <i class="fas fa-book me-1"></i>Тип проекта
+                </label>
+                <div class="mt-2">
+                  <span class="badge bg-secondary fs-6 d-inline-flex align-items-center">
+                    <i class="fas fa-book me-1"></i>{{ project.get_project_type_display }}
+                  </span>
+                </div>
+                <small class="text-muted d-block mt-2">
+                  Влияет на категоризацию и отображение контента
+                </small>
+              </div>
+            </div>
+            
+            <div class="col-12 col-sm-12 col-lg-4">
+              <div class="border rounded p-3 h-100">
+                <label class="form-label text-muted small fw-bold">
+                  <i class="fas fa-shield-alt me-1"></i>Возрастной рейтинг
+                </label>
+                <div class="mt-2">
+                  {% if project.age_rating == 'adult' %}
+                    <span class="badge bg-danger fs-6 d-inline-flex align-items-center">
+                      <i class="fas fa-exclamation-triangle me-1"></i>{{ project.get_age_rating_display }}
+                    </span>
+                  {% else %}
+                    <span class="badge bg-success fs-6 d-inline-flex align-items-center">
+                      <i class="fas fa-check-circle me-1"></i>{{ project.get_age_rating_display }}
+                    </span>
+                  {% endif %}
+                </div>
+                <small class="text-muted d-block mt-2">
+                  Критически важен для модерации и безопасности
+                </small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Дополнительная помощь для изменения заблокированных параметров -->
+          <div class="mt-4 p-3 bg-light rounded">
+            <h6 class="text-primary mb-2">
+              <i class="fas fa-question-circle me-1"></i>Нужно изменить эти параметры?
+            </h6>
+            <p class="mb-2 small">
+              Если вам необходимо изменить команду, тип проекта или возрастной рейтинг:
+            </p>
+            <ol class="small mb-3">
+              <li>Сохраните важные данные проекта (описание, контент)</li>
+              <li>Удалите текущий проект</li>
+              <li>Создайте новый проект с нужными параметрами</li>
+              <li>Восстановите сохраненные данные</li>
+            </ol>
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <a href="{% url 'projects:create_project' %}?team={{ project.team.id }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>Создать новый проект
+              </a>
+              <a href="{% url 'teams:team_detail' project.team.id %}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-users me-1"></i>Вернуться к команде
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Боковая панель с быстрой помощью -->
+    <div class="col-lg-6">
+      <div>
+        <!-- Быстрая помощь -->
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">
+              <i class="fas fa-question-circle me-1 text-info"></i>Быстрая помощь
+            </h6>
+          </div>
+          <div class="card-body">
+            <div class="accordion accordion-flush" id="helpAccordion">
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                          data-bs-target="#help-naming" aria-expanded="false">
+                    <i class="fas fa-heading me-2 text-primary"></i>Название проекта
+                  </button>
+                </h2>
+                <div id="help-naming" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                  <div class="accordion-body small">
+                    <ul class="mb-0">
+                      <li>Минимум 3 символа</li>
+                      <li>Максимум 200 символов</li>
+                      <li>Используйте понятные названия</li>
+                      <li>Избегайте спецсимволов</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                          data-bs-target="#help-description" aria-expanded="false">
+                    <i class="fas fa-align-left me-2 text-primary"></i>Описание
+                  </button>
+                </h2>
+                <div id="help-description" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                  <div class="accordion-body small">
+                    <ul class="mb-0">
+                      <li>Необязательное поле</li>
+                      <li>До 1000 символов</li>
+                      <li>Укажите жанр и особенности</li>
+                      <li>Опишите целевую аудиторию</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="accordion-item">
+                <h2 class="accordion-header">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                          data-bs-target="#help-status" aria-expanded="false">
+                    <i class="fas fa-flag me-2 text-primary"></i>Статус проекта
+                  </button>
+                </h2>
+                <div id="help-status" class="accordion-collapse collapse" data-bs-parent="#helpAccordion">
+                  <div class="accordion-body small">
+                    <div class="row g-2">
+                      <div class="col-12">
+                        <div class="d-flex align-items-center mb-2">
+                          <span class="badge bg-primary me-2">
+                            <i class="fas fa-language me-1"></i>Переводим
+                          </span>
+                          <span>Проект активно переводится командой</span>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="d-flex align-items-center mb-2">
+                          <span class="badge bg-success me-2">
+                            <i class="fas fa-check-circle me-1"></i>Переведён
+                          </span>
+                          <span>Все главы проекта переведены и готовы</span>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="d-flex align-items-center mb-2">
+                          <span class="badge bg-warning me-2">
+                            <i class="fas fa-pause-circle me-1"></i>Заморожен
+                          </span>
+                          <span>Работа временно приостановлена</span>
+                        </div>
+                      </div>
+                      <div class="col-12">
+                        <div class="d-flex align-items-center">
+                          <span class="badge bg-secondary me-2">
+                            <i class="fas fa-stop-circle me-1"></i>Заброшен
+                          </span>
+                          <span>Команда прекратила работу над проектом</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Форма редактирования -->
+  <div class="row mt-4">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">
+            <i class="fas fa-edit me-2 text-primary"></i>Редактируемые параметры
+          </h5>
+          <span class="badge bg-success">
+            <i class="fas fa-unlock me-1"></i>Можно изменять
+          </span>
+        </div>
+        <div class="card-body">
+          <!-- Информационное сообщение -->
+          <div class="alert alert-success d-flex align-items-start mb-4" role="alert">
+            <i class="fas fa-check-circle me-2 mt-1 flex-shrink-0"></i>
+            <div class="flex-grow-1">
+              <strong>Эти параметры можно безопасно изменять:</strong>
+              <ul class="mb-0 mt-2">
+                <li><strong>Название</strong> - отображается во всех списках и на страницах проекта</li>
+                <li><strong>Описание</strong> - помогает участникам понять суть проекта</li>
+                <li><strong>Статус</strong> - отражает текущий этап работы над проектом</li>
+              </ul>
+            </div>
+          </div>
+          
+          <form method="post" novalidate class="needs-validation">
+            {% csrf_token %}
+            
+            <!-- Название проекта -->
+            <div class="mb-4">
+              <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">
+                <i class="fas fa-heading me-1 text-primary"></i>{{ form.title.label }} 
+                <span class="text-danger" title="Обязательное поле">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-heading text-muted"></i>
+                </span>
+                {% if form.title.errors %}
+                  <input type="text" name="{{ form.title.name }}" value="{{ form.title.value|default:'' }}" 
+                         class="form-control is-invalid" id="{{ form.title.id_for_label }}" 
+                         placeholder="Введите название проекта" required minlength="3" maxlength="200">
+                {% else %}
+                  <input type="text" name="{{ form.title.name }}" value="{{ form.title.value|default:'' }}" 
+                         class="form-control" id="{{ form.title.id_for_label }}" 
+                         placeholder="Введите название проекта" required minlength="3" maxlength="200">
+                {% endif %}
+                {% if form.title.errors %}
+                  <div class="invalid-feedback">
+                    {{ form.title.errors.0 }}
+                  </div>
+                {% else %}
+                  <div class="invalid-feedback">
+                    Название должно содержать от 3 до 200 символов
+                  </div>
+                {% endif %}
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1 text-info"></i>
+                <strong>Совет:</strong> Используйте понятное и уникальное название, которое легко найти в списке проектов
+              </div>
+            </div>
+
+            <!-- Описание -->
+            <div class="mb-4">
+              <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+                <i class="fas fa-align-left me-1 text-primary"></i>{{ form.description.label }}
+                <span class="text-muted small">(необязательно)</span>
+              </label>
+              {% if form.description.errors %}
+                <textarea name="{{ form.description.name }}" class="form-control is-invalid" 
+                          id="{{ form.description.id_for_label }}" rows="4" maxlength="1000"
+                          placeholder="Краткое описание проекта, его целей и особенностей...">{{ form.description.value|default:'' }}</textarea>
+                <div class="invalid-feedback">
+                  {{ form.description.errors.0 }}
+                </div>
+              {% else %}
+                <textarea name="{{ form.description.name }}" class="form-control" 
+                          id="{{ form.description.id_for_label }}" rows="4" maxlength="1000"
+                          placeholder="Краткое описание проекта, его целей и особенностей...">{{ form.description.value|default:'' }}</textarea>
+              {% endif %}
+              <div class="form-text d-flex justify-content-between align-items-start">
+                <div>
+                  <i class="fas fa-info-circle me-1 text-info"></i>
+                  <strong>Совет:</strong> Хорошее описание помогает новым участникам быстрее понять проект
+                </div>
+                <small class="text-muted">
+                  <span id="description-counter">0</span>/1000
+                </small>
+              </div>
+            </div>
+
+            <!-- Статус -->
+            <div class="mb-4">
+              <label for="{{ form.status.id_for_label }}" class="form-label fw-semibold">
+                <i class="fas fa-flag me-1 text-primary"></i>{{ form.status.label }} 
+                <span class="text-danger" title="Обязательное поле">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="fas fa-flag text-muted"></i>
+                </span>
+                {% if form.status.errors %}
+                  {{ form.status|add_class:"form-select is-invalid" }}
+                  <div class="invalid-feedback">
+                    {{ form.status.errors.0 }}
+                  </div>
+                {% else %}
+                  {{ form.status|add_class:"form-select" }}
+                  <div class="invalid-feedback">
+                    Пожалуйста, выберите статус проекта
+                  </div>
+                {% endif %}
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1 text-info"></i>
+                <strong>Статусы:</strong> 
+                <span class="badge bg-primary me-1" data-bs-toggle="tooltip" 
+                      title="Проект активно переводится командой">
+                  <i class="fas fa-language me-1"></i>Переводим
+                </span>
+                <span class="badge bg-success me-1" data-bs-toggle="tooltip" 
+                      title="Все главы проекта переведены и готовы">
+                  <i class="fas fa-check-circle me-1"></i>Переведён
+                </span>
+                <span class="badge bg-warning me-1" data-bs-toggle="tooltip" 
+                      title="Работа временно приостановлена (перерыв, ожидание новых глав)">
+                  <i class="fas fa-pause-circle me-1"></i>Заморожен
+                </span>
+                <span class="badge bg-secondary" data-bs-toggle="tooltip" 
+                      title="Команда прекратила работу над проектом">
+                  <i class="fas fa-stop-circle me-1"></i>Заброшен
+                </span>
+              </div>
+            </div>
+
+            <!-- Дополнительная помощь -->
+            <div class="alert alert-light border d-flex align-items-start mb-4" role="alert">
+              <i class="fas fa-lightbulb me-2 mt-1 text-warning flex-shrink-0"></i>
+              <div class="flex-grow-1">
+                <h6 class="alert-heading mb-2">Полезные советы</h6>
+                <ul class="mb-0 small">
+                  <li><strong>Название:</strong> Избегайте слишком длинных названий - они плохо отображаются на мобильных устройствах</li>
+                  <li><strong>Описание:</strong> Укажите жанр, целевую аудиторию и особенности проекта</li>
+                  <li><strong>Статус:</strong> Регулярно обновляйте статус, чтобы команда понимала текущее состояние проекта</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Кнопки -->
+            <div class="row g-2">
+              <div class="col-12 col-sm-6 col-md-4 order-2 order-md-1">
+                <a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-outline-secondary w-100">
+                  <i class="fas fa-arrow-left me-2"></i>Назад к проекту
+                </a>
+              </div>
+              <div class="col-12 col-sm-6 col-md-4 order-1 order-md-2 ms-md-auto">
+                <button type="submit" class="btn btn-primary w-100" id="save-button">
+                  <i class="fas fa-save me-2"></i>Сохранить изменения
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Опасная зона - удаление проекта -->
+    <div class="col-lg-8 mt-4">
+      <div class="card border-danger">
+        <div class="card-header bg-danger text-white d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>Опасная зона
+          </h5>
+          <span class="badge bg-light text-danger">
+            <i class="fas fa-skull-crossbones me-1"></i>Необратимо
+          </span>
+        </div>
+        <div class="card-body">
+          <!-- Предупреждение -->
+          <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
+            <i class="fas fa-exclamation-triangle me-3 mt-1 flex-shrink-0 fs-4"></i>
+            <div class="flex-grow-1">
+              <h6 class="alert-heading mb-2">
+                <strong>Внимание! Необратимое действие</strong>
+              </h6>
+              <p class="mb-2">
+                Удаление проекта приведет к <strong>полной и безвозвратной потере</strong> всех данных:
+              </p>
+              <ul class="mb-3">
+                <li><strong>Все главы проекта</strong> и их статусы</li>
+                <li><strong>Папка с контентом</strong> и все файлы в ней</li>
+                <li><strong>История изменений</strong> и назначения</li>
+                <li><strong>Связанные данные</strong> в системе</li>
+              </ul>
+              <p class="mb-0">
+                <strong>Это действие нельзя отменить!</strong> Убедитесь, что вы сохранили все важные данные.
+              </p>
+            </div>
+          </div>
+
+          <!-- Информация о проекте для удаления -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6 class="text-danger mb-3">
+                <i class="fas fa-info-circle me-1"></i>Что будет удалено:
+              </h6>
+              <ul class="list-unstyled">
+                <li class="mb-2">
+                  <i class="fas fa-project-diagram text-danger me-2"></i>
+                  <strong>Проект:</strong> {{ project.title }}
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-list text-danger me-2"></i>
+                  <strong>Главы:</strong> {{ project.chapters.count }} шт.
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-folder text-danger me-2"></i>
+                  <strong>Папка контента:</strong> 
+                  {% if project.content_folder %}
+                    {{ project.content_folder }}
+                  {% else %}
+                    <span class="text-muted">не создана</span>
+                  {% endif %}
+                </li>
+                <li class="mb-2">
+                  <i class="fas fa-users text-danger me-2"></i>
+                  <strong>Команда:</strong> {{ project.team.name }}
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-success mb-3">
+                <i class="fas fa-download me-1"></i>Рекомендуем сохранить:
+              </h6>
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-outline-success" id="download-project-btn" 
+                        data-project-id="{{ project.pk }}">
+                  <i class="fas fa-download me-2"></i>Скачать архив проекта
+                  <small class="d-block text-muted mt-1">Включает все данные и файлы</small>
+                </button>
+                <div class="text-muted small">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Архив будет содержать информацию о проекте, главах и все файлы контента
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Подтверждение удаления -->
+          <div class="border-top pt-4">
+            <h6 class="text-danger mb-3">
+              <i class="fas fa-trash-alt me-1"></i>Удаление проекта
+            </h6>
+            
+            <div class="mb-3">
+              <label for="delete-confirmation" class="form-label">
+                Для подтверждения введите название проекта: <strong>{{ project.title }}</strong>
+              </label>
+              <input type="text" class="form-control" id="delete-confirmation" 
+                     placeholder="Введите название проекта для подтверждения">
+              <div class="form-text text-danger">
+                <i class="fas fa-exclamation-circle me-1"></i>
+                Название должно точно совпадать (с учетом регистра)
+              </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button type="button" class="btn btn-outline-secondary me-md-2" 
+                      onclick="document.getElementById('delete-confirmation').value = ''">
+                <i class="fas fa-times me-2"></i>Отмена
+              </button>
+              <button type="button" class="btn btn-danger" id="delete-project-btn" 
+                      data-project-id="{{ project.pk }}" 
+                      data-project-title="{{ project.title }}" disabled>
+                <i class="fas fa-trash-alt me-2"></i>Удалить проект навсегда
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-danger">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="deleteConfirmModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>Подтверждение удаления проекта
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-danger d-flex align-items-start mb-4" role="alert">
+          <i class="fas fa-skull-crossbones me-3 mt-1 flex-shrink-0 fs-3"></i>
+          <div class="flex-grow-1">
+            <h6 class="alert-heading mb-2">
+              <strong>Последнее предупреждение!</strong>
+            </h6>
+            <p class="mb-2">
+              Вы собираетесь <strong>безвозвратно удалить</strong> проект "<strong id="modal-project-title"></strong>".
+            </p>
+            <p class="mb-0">
+              <strong>Все данные будут потеряны навсегда!</strong> Это действие нельзя отменить.
+            </p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <h6 class="text-danger mb-3">Что будет удалено:</h6>
+            <ul class="list-unstyled">
+              <li><i class="fas fa-times text-danger me-2"></i>Проект и все его настройки</li>
+              <li><i class="fas fa-times text-danger me-2"></i>Все главы и их статусы</li>
+              <li><i class="fas fa-times text-danger me-2"></i>Папка с файлами контента</li>
+              <li><i class="fas fa-times text-danger me-2"></i>История изменений</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-success mb-3">Рекомендации:</h6>
+            <ul class="list-unstyled">
+              <li><i class="fas fa-check text-success me-2"></i>Скачайте архив проекта</li>
+              <li><i class="fas fa-check text-success me-2"></i>Уведомите команду об удалении</li>
+              <li><i class="fas fa-check text-success me-2"></i>Сохраните важные файлы отдельно</li>
+              <li><i class="fas fa-check text-success me-2"></i>Убедитесь в правильности решения</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-4 p-3 bg-light border-start border-5 border-warning">
+          <h6 class="text-warning mb-2">
+            <i class="fas fa-lightbulb me-1"></i>Альтернативы удалению:
+          </h6>
+          <ul class="mb-0 small">
+            <li>Измените статус на "Заброшен" вместо удаления</li>
+            <li>Передайте проект другой команде</li>
+            <li>Архивируйте проект для будущего использования</li>
+          </ul>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-arrow-left me-2"></i>Отмена
+        </button>
+        <button type="button" class="btn btn-success me-2" id="modal-download-btn">
+          <i class="fas fa-download me-2"></i>Сначала скачать архив
+        </button>
+        <button type="button" class="btn btn-danger" id="modal-delete-confirm-btn">
+          <i class="fas fa-trash-alt me-2"></i>Да, удалить навсегда
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript для улучшенной валидации и UX -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Элементы формы
+    const form = document.querySelector('.needs-validation');
+    const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+    const descriptionTextarea = document.getElementById('{{ form.description.id_for_label }}');
+    const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+    const saveButton = document.getElementById('save-button');
+    const descriptionCounter = document.getElementById('description-counter');
+    
+    // Счетчик символов для описания
+    if (descriptionTextarea && descriptionCounter) {
+        function updateCounter() {
+            const length = descriptionTextarea.value.length;
+            descriptionCounter.textContent = length;
+            
+            if (length > 900) {
+                descriptionCounter.classList.add('text-warning');
+                descriptionCounter.classList.remove('text-muted');
+            } else if (length > 950) {
+                descriptionCounter.classList.add('text-danger');
+                descriptionCounter.classList.remove('text-warning', 'text-muted');
+            } else {
+                descriptionCounter.classList.add('text-muted');
+                descriptionCounter.classList.remove('text-warning', 'text-danger');
+            }
+        }
+        
+        descriptionTextarea.addEventListener('input', updateCounter);
+        updateCounter(); // Инициализация
+    }
+    
+    // Валидация в реальном времени
+    if (titleInput) {
+        titleInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            if (value.length < 3) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            } else {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            }
+        });
+    }
+    
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function() {
+            if (this.value) {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            } else {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            }
+        });
+    }
+    
+    // Обработка отправки формы
+    if (form) {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Проверяем валидность
+            let isValid = true;
+            
+            // Проверка названия
+            if (titleInput) {
+                const titleValue = titleInput.value.trim();
+                if (titleValue.length < 3) {
+                    titleInput.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    titleInput.classList.remove('is-invalid');
+                    titleInput.classList.add('is-valid');
+                }
+            }
+            
+            // Проверка статуса
+            if (statusSelect && !statusSelect.value) {
+                statusSelect.classList.add('is-invalid');
+                isValid = false;
+            } else if (statusSelect) {
+                statusSelect.classList.remove('is-invalid');
+                statusSelect.classList.add('is-valid');
+            }
+            
+            form.classList.add('was-validated');
+            
+            if (isValid) {
+                // Показываем индикатор загрузки
+                saveButton.disabled = true;
+                saveButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Сохранение...';
+                
+                // Отправляем форму
+                this.submit();
+            } else {
+                // Прокручиваем к первому невалидному полю
+                const firstInvalid = form.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstInvalid.focus();
+                }
+            }
+        });
+    }
+    
+    // Предотвращение потери данных
+    let formChanged = false;
+    const formInputs = form.querySelectorAll('input, textarea, select');
+    
+    formInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            formChanged = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'У вас есть несохраненные изменения. Вы уверены, что хотите покинуть страницу?';
+        }
+    });
+    
+    // Сброс флага при отправке формы
+    if (form) {
+        form.addEventListener('submit', () => {
+            formChanged = false;
+        });
+    }
+    
+    // === ФУНКЦИОНАЛЬНОСТЬ УДАЛЕНИЯ ПРОЕКТА ===
+    
+    const deleteConfirmationInput = document.getElementById('delete-confirmation');
+    const deleteProjectBtn = document.getElementById('delete-project-btn');
+    const downloadProjectBtn = document.getElementById('download-project-btn');
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    const modalDeleteBtn = document.getElementById('modal-delete-confirm-btn');
+    const modalDownloadBtn = document.getElementById('modal-download-btn');
+    const modalProjectTitle = document.getElementById('modal-project-title');
+    
+    // Проверка ввода названия проекта для активации кнопки удаления
+    if (deleteConfirmationInput && deleteProjectBtn) {
+        const projectTitle = deleteProjectBtn.dataset.projectTitle;
+        
+        deleteConfirmationInput.addEventListener('input', function() {
+            const inputValue = this.value.trim();
+            const isMatch = inputValue === projectTitle;
+            
+            deleteProjectBtn.disabled = !isMatch;
+            
+            if (isMatch) {
+                deleteProjectBtn.classList.remove('btn-outline-danger');
+                deleteProjectBtn.classList.add('btn-danger');
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            } else {
+                deleteProjectBtn.classList.add('btn-outline-danger');
+                deleteProjectBtn.classList.remove('btn-danger');
+                this.classList.remove('is-valid');
+                if (inputValue.length > 0) {
+                    this.classList.add('is-invalid');
+                } else {
+                    this.classList.remove('is-invalid');
+                }
+            }
+        });
+    }
+    
+    // Обработка клика по кнопке удаления
+    if (deleteProjectBtn) {
+        deleteProjectBtn.addEventListener('click', function() {
+            const projectTitle = this.dataset.projectTitle;
+            modalProjectTitle.textContent = projectTitle;
+            deleteModal.show();
+        });
+    }
+    
+    // Функция скачивания архива проекта
+    function downloadProjectArchive(projectId, buttonElement) {
+        const originalText = buttonElement.innerHTML;
+        buttonElement.disabled = true;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Создание архива...';
+        
+        // Создаем скрытую ссылку для скачивания
+        const downloadLink = document.createElement('a');
+        downloadLink.href = `/projects/${projectId}/download/`;
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        
+        // Восстанавливаем кнопку через 3 секунды
+        setTimeout(() => {
+            buttonElement.disabled = false;
+            buttonElement.innerHTML = originalText;
+        }, 3000);
+    }
+    
+    // Обработка скачивания из основной формы
+    if (downloadProjectBtn) {
+        downloadProjectBtn.addEventListener('click', function() {
+            const projectId = this.dataset.projectId;
+            downloadProjectArchive(projectId, this);
+        });
+    }
+    
+    // Обработка скачивания из модального окна
+    if (modalDownloadBtn) {
+        modalDownloadBtn.addEventListener('click', function() {
+            const projectId = deleteProjectBtn.dataset.projectId;
+            downloadProjectArchive(projectId, this);
+        });
+    }
+    
+    // Обработка подтверждения удаления в модальном окне
+    if (modalDeleteBtn) {
+        modalDeleteBtn.addEventListener('click', function() {
+            const projectId = deleteProjectBtn.dataset.projectId;
+            const projectTitle = deleteProjectBtn.dataset.projectTitle;
+            
+            // Показываем индикатор загрузки
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Удаление...';
+            
+            // Отправляем запрос на удаление
+            fetch(`/projects/${projectId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Показываем сообщение об успехе
+                    deleteModal.hide();
+                    
+                    // Создаем уведомление об успешном удалении
+                    const successAlert = document.createElement('div');
+                    successAlert.className = 'alert alert-success alert-dismissible fade show position-fixed';
+                    successAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                    successAlert.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Проект удален!</strong> ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.body.appendChild(successAlert);
+                    
+                    // Перенаправляем через 2 секунды
+                    setTimeout(() => {
+                        window.location.href = data.redirect_url;
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Неизвестная ошибка');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении проекта:', error);
+                
+                // Восстанавливаем кнопку
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Да, удалить навсегда';
+                
+                // Показываем ошибку
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+                errorAlert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Ошибка!</strong> ${error.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(errorAlert);
+                
+                // Автоматически скрываем через 5 секунд
+                setTimeout(() => {
+                    if (errorAlert.parentNode) {
+                        errorAlert.remove();
+                    }
+                }, 5000);
+            });
+        });
+    }
+    
+    // Сброс состояния при закрытии модального окна
+    document.getElementById('deleteConfirmModal').addEventListener('hidden.bs.modal', function() {
+        if (modalDeleteBtn) {
+            modalDeleteBtn.disabled = false;
+            modalDeleteBtn.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Да, удалить навсегда';
+        }
+        if (modalDownloadBtn) {
+            modalDownloadBtn.disabled = false;
+            modalDownloadBtn.innerHTML = '<i class="fas fa-download me-2"></i>Сначала скачать архив';
+        }
+    });
+});
+</script>
+
+{% endblock %}

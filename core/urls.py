@@ -5,18 +5,25 @@ from django.conf import settings
 from django.conf.urls.static import static
 from .views import MainPageView, DocsView, TestDropdownView, TestDjangoView
 
+# Импортируем наш расширенный административный сайт
+from utils.admin_site import admin_site
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin_site.urls),
     # URL-маршруты для управления командами
     path('teams/', include('teams.urls', namespace='teams')),
     # URL-маршруты пользователей (аутентификация)
     path('accounts/', include('users.urls')),
-    # URL-маршруты для управления проектами (временно отключено)
-    # path('projects/', include('projects.urls', namespace='projects')),
-    # URL-маршруты для глоссария (временно отключено)
-    # path('glossary/', include('glossary.urls', namespace='glossary')),
+    # URL-маршруты для управления проектами
+    path('projects/', include('projects.urls', namespace='projects')),
+    # URL-маршруты для глоссария
+    path('glossary/', include('glossary.urls', namespace='glossary')),
     # URL-маршруты для системы уведомлений
     path('notifications/', include('notifications.urls', namespace='notifications')),
+    # URL-маршруты для TinyMCE редактора
+    path('tinymce/', include('tinymce.urls')),
+    # URL-маршруты для редактора контента
+    path('content/', include('content.urls', namespace='content')),
     # Обработка favicon
     path('favicon.ico', RedirectView.as_view(url='/static/images/favicon.ico', permanent=True)),
     # Главная страница сайта

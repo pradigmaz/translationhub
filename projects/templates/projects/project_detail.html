@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ project.title }} - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'teams:team_detail' project.team.id %}">
+          <i class="fas fa-users me-1"></i>{{ project.team.name }}
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">{{ project.title }}</li>
+    </ol>
+  </nav>
+
+  <!-- Заголовок проекта -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h1 class="h2 mb-2">{{ project.title }}</h1>
+          <div class="mb-3">
+            <span class="badge bg-secondary me-2">{{ project.get_project_type_display }}</span>
+            <span class="badge bg-info me-2">{{ project.get_age_rating_display }}</span>
+            <div class="status-info d-inline-block">
+              <span class="{{ project.get_status_badge_class }} fs-6" data-bs-toggle="tooltip" 
+                    title="{{ project.get_status_description }}">
+                <i class="{{ project.get_status_icon }} me-2"></i>{{ project.get_status_display }}
+              </span>
+              <small class="text-muted ms-2">{{ project.get_status_description }}</small>
+            </div>
+          </div>
+          <p class="text-muted mb-0">
+            <i class="fas fa-users me-1"></i>Команда: {{ project.team.name }}
+          </p>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'projects:edit_project' project.pk %}" class="btn btn-outline-primary">
+            <i class="fas fa-edit me-2"></i>Редактировать
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Описание проекта -->
+  {% if project.description %}
+    <div class="row mb-4">
+      <div class="col">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-info-circle me-2"></i>Описание
+            </h5>
+          </div>
+          <div class="card-body">
+            <p class="mb-0">{{ project.description }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Главы проекта -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-book me-2"></i>Главы
+          </h5>
+          <button class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-2"></i>Добавить главу
+          </button>
+        </div>
+        <div class="card-body">
+          {% if chapters %}
+            <div class="list-group">
+              {% for chapter in chapters %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="mb-1">{{ chapter.title }}</h6>
+                    <small class="text-muted">Глава {{ chapter.number }}</small>
+                  </div>
+                  <div>
+                    <span class="badge bg-primary">{{ chapter.get_status_display }}</span>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center py-4">
+              <i class="fas fa-book fa-3x text-muted mb-3"></i>
+              <h5 class="text-muted">Пока нет глав</h5>
+              <p class="text-muted mb-3">Добавьте первую главу для начала работы</p>
+              <button class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Добавить первую главу
+              </button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Раздел глоссария проекта -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header text-bg-info border-0 rounded-top">
+          <div class="d-flex justify-content-between align-items-center">
+            <h2 class="card-title h5 mb-0 fw-bold">
+              <i class="fas fa-book me-2"></i>Глоссарий проекта
+            </h2>
+            <span class="badge text-bg-light rounded-pill px-3 py-2">
+              <i class="fas fa-tools me-1"></i>В разработке
+            </span>
+          </div>
+        </div>
+        <div class="card-body p-4">
+          <div class="text-center py-4">
+            <i class="fas fa-book fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted mb-3">Глоссарий проекта</h5>
+            <p class="text-muted mb-4">
+              Создавайте и управляйте терминами, персонажами, событиями и определениями для вашего проекта
+            </p>
+            <a href="{% url 'glossary:glossary_list' project.id %}" class="btn btn-info btn-lg shadow-sm">
+              <i class="fas fa-book me-2"></i>Открыть глоссарий
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Bootstrap tooltips для статусов проекта
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

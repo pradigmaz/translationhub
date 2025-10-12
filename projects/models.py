@@ -19,16 +19,112 @@ class Project(models.Model):
     title = models.CharField(max_length=200)
     # Опциональное описание.
     description = models.TextField(blank=True)
-    # Статусы проекта для отслеживания (например, активен, завершен, заброшен).
-    STATUS_CHOICES = (
-        ('active', 'Активен'),
-        ('completed', 'Завершен'),
-        ('on_hold', 'В заморозке'),
-        ('dropped', 'Заброшен'),
+    
+    # Типы проектов для категоризации контента
+    PROJECT_TYPE_CHOICES = [
+        ('manga', 'Манга'),
+        ('manhwa', 'Манхва'),
+        ('manhua', 'Маньхуа'),
+    ]
+    project_type = models.CharField(
+        max_length=10, 
+        choices=PROJECT_TYPE_CHOICES, 
+        default='manga',
+        verbose_name="Тип проекта"
     )
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    
+    # Возрастные рейтинги для контента
+    AGE_RATING_CHOICES = [
+        ('general', 'Обычная'),
+        ('adult', '18+'),
+    ]
+    age_rating = models.CharField(
+        max_length=10, 
+        choices=AGE_RATING_CHOICES, 
+        default='general',
+        verbose_name="Возрастной рейтинг"
+    )
+    
+    # Поле для автогенерированной папки контента
+    # Уникальность только в рамках команды - разные команды могут иметь одинаковые папки
+    content_folder = models.CharField(
+        max_length=100, 
+        verbose_name="Папка контента",
+        blank=True  # Будет заполняться автоматически
+    )
+    
+    # Обновленные статусы проекта для отслеживания перевода
+    STATUS_CHOICES = [
+        ('translating', 'Переводим'),      # Активная работа над проектом
+        ('dropped', 'Заброшен'),           # Команда прекратила работу
+        ('completed', 'Переведён'),        # Все главы готовы
+        ('frozen', 'Заморожен'),           # Временная приостановка
+    ]
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='translating',  # Новый проект по умолчанию "переводим"
+        verbose_name="Статус проекта"
+    )
     # Дата создания проекта, заполняется автоматически.
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        # Уникальность папки только в рамках команды
+        unique_together = [['team', 'content_folder']]
+
+    def get_status_badge_class(self):
+        """Возвращает CSS класс для badge статуса"""
+        status_classes = {
+            'translating': 'bg-primary',
+            'dropped': 'bg-secondary', 
+            'completed': 'bg-success',
+            'frozen': 'bg-warning',
+        }
+        return f"badge {status_classes.get(self.status, 'bg-secondary')}"
+
+    def get_status_icon(self):
+        """Возвращает иконку FontAwesome для статуса"""
+        status_icons = {
+            'translating': 'fas fa-language',
+            'dropped': 'fas fa-stop-circle',
+            'completed': 'fas fa-check-circle', 
+            'frozen': 'fas fa-pause-circle',
+        }
+        return status_icons.get(self.status, 'fas fa-question-circle')
+
+    def get_status_description(self):
+        """Возвращает описание статуса для подсказок"""
+        descriptions = {
+            'translating': 'Проект активно переводится командой',
+            'dropped': 'Команда прекратила работу над проектом',
+            'completed': 'Все главы проекта переведены и готовы',
+            'frozen': 'Работа временно приостановлена (перерыв, ожидание новых глав)',
+        }
+        return descriptions.get(self.status, 'Неизвестный статус')
+
+    def user_has_access(self, user):
+        """Проверяет, имеет ли пользователь доступ к проекту через активное членство в команде"""
+        return (
+            self.team.members.filter(
+                id=user.id,
+                teammembership__is_active=True
+            ).exists() and 
+            self.team.status == 'active'
+        )
+    
+    def get_active_members(self):
+        """Возвращает активных участников команды проекта"""
+        return self.team.members.filter(
+            teammembership__is_active=True
+        ).select_related('teammembership')
+    
+    def can_be_edited_by(self, user):
+        """Проверяет, может ли пользователь редактировать проект"""
+        return (
+            self.user_has_access(user) and 
+            (self.team.creator == user or user.is_superuser)
+        )
 
     def __str__(self):
         # Возвращает название проекта в виде строки (удобно для админки).

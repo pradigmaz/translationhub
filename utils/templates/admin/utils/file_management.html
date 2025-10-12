@@ -1,0 +1,587 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Главная</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block extrahead %}
+<style>
+.management-section {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.management-section h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.action-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 15px 0;
+    transition: box-shadow 0.3s ease;
+}
+
+.action-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.action-card.danger {
+    border-left: 4px solid #dc3545;
+}
+
+.action-card.safe {
+    border-left: 4px solid #28a745;
+}
+
+.action-title {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.action-description {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.action-form {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: normal;
+    margin: 0;
+    color: #495057;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 5px;
+    background: #007cba;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.btn:hover {
+    background: #005a87;
+    color: white;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-secondary {
+    background: #6c757d;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+.btn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.warning-box {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #856404;
+}
+
+.warning-box h4 {
+    margin-top: 0;
+    color: #856404;
+}
+
+.danger-box {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #721c24;
+}
+
+.danger-box h4 {
+    margin-top: 0;
+    color: #721c24;
+}
+
+.success-box {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    color: #155724;
+}
+
+.success-box h4 {
+    margin-top: 0;
+    color: #155724;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 10px 0;
+    display: none;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: #007bff;
+    width: 0%;
+    transition: width 0.3s ease;
+}
+
+.loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.loading.active {
+    display: block;
+}
+
+.result-box {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 15px;
+    margin: 15px 0;
+    font-family: monospace;
+    font-size: 0.9em;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.navigation {
+    margin: 20px 0;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin: 0;
+}
+
+.confirmation-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: none;
+    border-radius: 4px;
+    width: 80%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-title {
+    margin: 0;
+    color: #333;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    <div class="warning-box">
+        <h4>⚠ Внимание!</h4>
+        <p>Операции управления файлами могут повлиять на работу системы. Рекомендуется создать резервную копию перед выполнением критических операций.</p>
+    </div>
+    
+    <!-- Доступные действия -->
+    {% if available_actions %}
+    <div class="management-section">
+        <h3>Доступные действия</h3>
+        
+        {% for action in available_actions %}
+        <div class="action-card {% if action.danger %}danger{% else %}safe{% endif %}">
+            <div class="action-title">{{ action.title }}</div>
+            <div class="action-description">{{ action.description }}</div>
+            
+            <form method="post" class="action-form" onsubmit="return confirmAction(this, '{{ action.title }}', {{ action.danger|yesno:"true,false" }})">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="{{ action.id }}">
+                
+                {% if action.has_dry_run %}
+                <div class="checkbox-group">
+                    <input type="checkbox" id="dry_run_{{ action.id }}" name="dry_run" checked>
+                    <label for="dry_run_{{ action.id }}">Тестовый режим (не удалять файлы)</label>
+                </div>
+                {% endif %}
+                
+                <button type="submit" class="btn {% if action.danger %}btn-danger{% else %}btn-success{% endif %}">
+                    Выполнить
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Навигация -->
+    <div class="navigation">
+        <a href="{% url 'admin:file_structure' %}" class="btn">Структура файлов</a>
+        <a href="{% url 'admin:file_statistics' %}" class="btn">Статистика</a>
+        <a href="{% url 'admin:file_diagnostics' %}" class="btn">Диагностика</a>
+        <a href="{% url 'admin:file_system_status' %}" class="btn btn-secondary">Статус системы</a>
+    </div>
+    
+    <!-- Быстрые действия через API -->
+    <div class="management-section">
+        <h3>Быстрые действия</h3>
+        
+        <div class="action-card safe">
+            <div class="action-title">Проверить структуру файлов</div>
+            <div class="action-description">Быстрая проверка целостности файловой структуры</div>
+            <button onclick="quickValidateStructure()" class="btn btn-success">Проверить</button>
+        </div>
+        
+        <div class="action-card danger">
+            <div class="action-title">Очистить осиротевшие файлы (тест)</div>
+            <div class="action-description">Показать список файлов для удаления без фактического удаления</div>
+            <button onclick="quickCleanupOrphaned(true)" class="btn btn-warning">Показать список</button>
+        </div>
+        
+        <div class="action-card safe">
+            <div class="action-title">Исправить права доступа</div>
+            <div class="action-description">Установить корректные права доступа для файлов и папок</div>
+            <button onclick="quickFixPermissions()" class="btn btn-success">Исправить</button>
+        </div>
+    </div>
+    
+    <!-- Результаты операций -->
+    <div id="operation-results" style="display: none;">
+        <div class="management-section">
+            <h3>Результаты операции</h3>
+            <div id="results-content" class="result-box"></div>
+        </div>
+    </div>
+    
+    <!-- Индикатор загрузки -->
+    <div id="loading" class="loading">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <p>Выполняется операция, пожалуйста подождите...</p>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения -->
+<div id="confirmation-modal" class="confirmation-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-title">Подтверждение действия</h3>
+            <span class="close" onclick="closeModal()">&times;</span>
+        </div>
+        <div id="modal-body">
+            <p>Вы уверены, что хотите выполнить это действие?</p>
+        </div>
+        <div class="modal-actions">
+            <button onclick="closeModal()" class="btn btn-secondary">Отмена</button>
+            <button onclick="confirmModalAction()" class="btn btn-danger" id="confirm-btn">Подтвердить</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentForm = null;
+
+function confirmAction(form, actionTitle, isDangerous) {
+    if (!isDangerous) {
+        return true; // Безопасные действия выполняются сразу
+    }
+    
+    currentForm = form;
+    document.getElementById('modal-title').textContent = 'Подтверждение: ' + actionTitle;
+    
+    const dryRunCheckbox = form.querySelector('input[name="dry_run"]');
+    const isDryRun = dryRunCheckbox && dryRunCheckbox.checked;
+    
+    if (isDryRun) {
+        document.getElementById('modal-body').innerHTML = 
+            '<p>Вы собираетесь выполнить <strong>' + actionTitle + '</strong> в тестовом режиме.</p>' +
+            '<p>Файлы не будут удалены, только показан список для удаления.</p>';
+        document.getElementById('confirm-btn').className = 'btn btn-warning';
+        document.getElementById('confirm-btn').textContent = 'Выполнить тест';
+    } else {
+        document.getElementById('modal-body').innerHTML = 
+            '<p><strong>ВНИМАНИЕ!</strong> Вы собираетесь выполнить <strong>' + actionTitle + '</strong>.</p>' +
+            '<p style="color: #dc3545;">Это действие может привести к необратимому удалению файлов!</p>' +
+            '<p>Убедитесь, что у вас есть резервная копия данных.</p>';
+        document.getElementById('confirm-btn').className = 'btn btn-danger';
+        document.getElementById('confirm-btn').textContent = 'Да, выполнить';
+    }
+    
+    document.getElementById('confirmation-modal').style.display = 'block';
+    return false; // Предотвращаем отправку формы
+}
+
+function closeModal() {
+    document.getElementById('confirmation-modal').style.display = 'none';
+    currentForm = null;
+}
+
+function confirmModalAction() {
+    if (currentForm) {
+        closeModal();
+        showLoading();
+        currentForm.submit();
+    }
+}
+
+function showLoading() {
+    document.getElementById('loading').classList.add('active');
+    
+    // Симуляция прогресса
+    let progress = 0;
+    const progressBar = document.getElementById('progress-fill');
+    const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+        
+        if (progress >= 90) {
+            clearInterval(interval);
+        }
+    }, 500);
+}
+
+function hideLoading() {
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('progress-fill').style.width = '0%';
+}
+
+function showResults(data) {
+    const resultsDiv = document.getElementById('operation-results');
+    const contentDiv = document.getElementById('results-content');
+    
+    contentDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    resultsDiv.style.display = 'block';
+    
+    // Прокручиваем к результатам
+    resultsDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function quickValidateStructure() {
+    showLoading();
+    
+    fetch('{% url "admin:api_validate_structure" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResults(data);
+        
+        if (data.success) {
+            alert(`Проверка завершена успешно!\nСоздано папок: ${data.directories_created}`);
+        } else {
+            alert(`Ошибка проверки: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        alert('Ошибка выполнения операции: ' + error);
+    });
+}
+
+function quickCleanupOrphaned(dryRun = true) {
+    showLoading();
+    
+    fetch('{% url "admin:api_cleanup_orphaned" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ dry_run: dryRun })
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResults(data);
+        
+        if (data.success) {
+            if (data.dry_run) {
+                alert(`Найдено для удаления:\n${data.files_deleted} файлов\nРазмер: ${formatBytes(data.space_freed)}`);
+            } else {
+                alert(`Очистка завершена!\nУдалено файлов: ${data.files_deleted}\nОсвобождено места: ${formatBytes(data.space_freed)}`);
+            }
+        } else {
+            alert(`Ошибка очистки: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        alert('Ошибка выполнения операции: ' + error);
+    });
+}
+
+function quickFixPermissions() {
+    showLoading();
+    
+    fetch('{% url "admin:api_fix_permissions" %}', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        hideLoading();
+        showResults(data);
+        
+        if (data.success) {
+            alert(`Права доступа исправлены!\nФайлов: ${data.files_fixed}\nПапок: ${data.directories_fixed}`);
+        } else {
+            alert(`Ошибка исправления прав: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        hideLoading();
+        alert('Ошибка выполнения операции: ' + error);
+    });
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('confirmation-modal');
+    if (event.target === modal) {
+        closeModal();
+    }
+}
+
+// Скрытие загрузки при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    hideLoading();
+});
+</script>
+{% endblock %}

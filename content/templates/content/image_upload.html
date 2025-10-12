@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Загрузка изображения{% if project %} - {{ project.title }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Загрузка изображения</h4>
+                    {% if project %}
+                        <small class="text-muted">Проект: {{ project.title }}</small>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                                <div class="text-danger">
+                                    {{ form.title.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.project.id_for_label }}" class="form-label">{{ form.project.label }}</label>
+                            {{ form.project }}
+                            {% if form.project.errors %}
+                                <div class="text-danger">
+                                    {{ form.project.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+                            {{ form.image }}
+                            {% if form.image.errors %}
+                                <div class="text-danger">
+                                    {{ form.image.errors }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Поддерживаются форматы: JPG, PNG, WebP. Максимальный размер: 5MB.
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Загрузить изображение
+                            </button>
+                            {% if project %}
+                                <a href="{% url 'content:image_gallery' project_id=project.id %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Назад к галерее
+                                </a>
+                            {% else %}
+                                <a href="{% url 'content:editor' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Назад
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

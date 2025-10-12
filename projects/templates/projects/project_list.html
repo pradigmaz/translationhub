@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои проекты - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Заголовок страницы -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h2 mb-0">
+          <i class="fas fa-project-diagram me-2 text-primary"></i>Мои проекты
+        </h1>
+        <a href="{% url 'teams:team_list' %}" class="btn btn-primary">
+          <i class="fas fa-users me-2"></i>Перейти к командам
+        </a>
+      </div>
+    </div>
+  </div>
+
+  {% if projects %}
+    <div class="row">
+      {% for project in projects %}
+        <div class="col-md-6 col-lg-4 mb-4">
+          <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+              <h5 class="card-title mb-0">{{ project.title }}</h5>
+            </div>
+            <div class="card-body">
+              {% if project.description %}
+                <p class="card-text">{{ project.description|truncatewords:20 }}</p>
+              {% endif %}
+              
+              <div class="mb-2">
+                <small class="text-muted">
+                  <i class="fas fa-users me-1"></i>{{ project.team.name }}
+                </small>
+              </div>
+              
+              <div class="mb-2">
+                <span class="badge bg-secondary">{{ project.get_project_type_display }}</span>
+                <span class="badge bg-info">{{ project.get_age_rating_display }}</span>
+                <span class="{{ project.get_status_badge_class }}" data-bs-toggle="tooltip" 
+                      title="{{ project.get_status_description }}">
+                  <i class="{{ project.get_status_icon }} me-1"></i>{{ project.get_status_display }}
+                </span>
+              </div>
+            </div>
+            <div class="card-footer">
+              <div class="d-flex gap-2">
+                <a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-primary btn-sm">
+                  <i class="fas fa-eye me-1"></i>Просмотр
+                </a>
+                <a href="{% url 'projects:edit_project' project.pk %}" class="btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-edit me-1"></i>Редактировать
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="row">
+      <div class="col-12">
+        <div class="text-center py-5">
+          <i class="fas fa-project-diagram fa-4x text-muted mb-3"></i>
+          <h3 class="text-muted">У вас пока нет проектов</h3>
+          <p class="text-muted mb-4">Проекты создаются в рамках команд. Перейдите к своим командам для создания проектов.</p>
+          <a href="{% url 'teams:team_list' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-users me-2"></i>Перейти к командам
+          </a>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация Bootstrap tooltips для статусов проектов
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

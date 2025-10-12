@@ -1,0 +1,235 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load utils.admin_monitoring %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Главная</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger">
+            <strong>Ошибка:</strong> {{ error }}
+        </div>
+    {% else %}
+        <!-- Общая статистика -->
+        {% if stats.operations %}
+        <div class="module">
+            <h2>Общая статистика</h2>
+            {% with total_ops=stats.operations|length total_count=0 total_success=0 total_errors=0 total_size=0 %}
+                {% for op_type, op_stats in stats.operations.items %}
+                    {% with total_count=total_count|add:op_stats.total_count %}
+                    {% with total_success=total_success|add:op_stats.success_count %}
+                    {% with total_errors=total_errors|add:op_stats.error_count %}
+                    {% with total_size=total_size|add:op_stats.total_size %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                    {% endwith %}
+                {% endfor %}
+                
+                <table class="table">
+                    <tr>
+                        <th>Всего операций:</th>
+                        <td>{{ total_count }}</td>
+                    </tr>
+                    <tr>
+                        <th>Успешных:</th>
+                        <td>{{ total_success }}</td>
+                    </tr>
+                    <tr>
+                        <th>Ошибок:</th>
+                        <td>
+                            {{ total_errors }}
+                            {% if total_count > 0 %}
+                                {% with error_rate=total_errors|percentage:total_count %}
+                                    ({{ error_rate }}%)
+                                    {% if error_rate > 10 %}
+                                        <span class="badge badge-danger">Высокий уровень ошибок!</span>
+                                    {% elif error_rate > 5 %}
+                                        <span class="badge badge-warning">Повышенный уровень ошибок</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Общий объем данных:</th>
+                        <td>{{ total_size|format_file_size }}</td>
+                    </tr>
+                </table>
+            {% endwith %}
+        </div>
+        
+        <!-- Статистика по типам операций -->
+        <div class="module">
+            <h2>Статистика по типам операций</h2>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Операция</th>
+                        <th>Всего</th>
+                        <th>Успешно</th>
+                        <th>Ошибки</th>
+                        <th>Успешность</th>
+                        <th>Объем данных</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for op_type, op_stats in stats.operations.items %}
+                    <tr>
+                        <td>{{ op_type|capfirst }}</td>
+                        <td>{{ op_stats.total_count }}</td>
+                        <td>{{ op_stats.success_count }}</td>
+                        <td>{{ op_stats.error_count }}</td>
+                        <td>
+                            {% if op_stats.total_count > 0 %}
+                                {% with success_rate=op_stats.success_count|percentage:op_stats.total_count %}
+                                    {{ success_rate }}%
+                                    {% if success_rate < 90 %}
+                                        <span class="badge badge-warning">Низкая успешность</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td>{{ op_stats.total_size|format_file_size }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        <!-- Ошибки -->
+        {% if stats.errors %}
+        <div class="module">
+            <h2>Последние ошибки</h2>
+            {% for error_type, error_info in stats.errors.items %}
+                <h3>{{ error_type|capfirst }} (всего: {{ error_info.count }})</h3>
+                {% if error_info.recent_errors %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Время</th>
+                                <th>Пользователь</th>
+                                <th>Сообщение</th>
+                                <th>Файл</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for error in error_info.recent_errors|slice:":5" %}
+                            <tr>
+                                <td>{{ error.timestamp|slice:":19" }}</td>
+                                <td>{{ error.user_id|default:"N/A" }}</td>
+                                <td>{{ error.message|truncatechars:80 }}</td>
+                                <td>{{ error.file_path|default:"N/A"|truncatechars:50 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        
+        <!-- Действия -->
+        <div class="module">
+            <h2>Действия</h2>
+            <p>
+                <a href="{% url 'admin:file_metrics' %}" class="button">Метрики файловой системы</a>
+                <a href="{% url 'admin:cleanup_orphaned' %}" class="button">Очистка осиротевших файлов</a>
+                <button onclick="clearStats()" class="button">Очистить статистику</button>
+            </p>
+        </div>
+        
+        <!-- Детальные данные (скрытые по умолчанию) -->
+        <div class="module">
+            <h2>
+                <a href="#" onclick="toggleDetails(); return false;">
+                    Детальные данные (JSON) <span id="toggle-text">[показать]</span>
+                </a>
+            </h2>
+            <div id="detailed-data" style="display: none;">
+                <pre style="background: #f8f8f8; padding: 10px; border: 1px solid #ddd; overflow: auto; max-height: 400px;">{{ stats_json }}</pre>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleDetails() {
+    var details = document.getElementById('detailed-data');
+    var toggleText = document.getElementById('toggle-text');
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        toggleText.textContent = '[скрыть]';
+    } else {
+        details.style.display = 'none';
+        toggleText.textContent = '[показать]';
+    }
+}
+
+function clearStats() {
+    if (confirm('Вы уверены, что хотите очистить статистику операций?')) {
+        // Здесь можно добавить AJAX запрос для очистки статистики
+        alert('Функция очистки статистики будет реализована в следующих версиях');
+    }
+}
+
+// Автообновление каждые 30 секунд
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+
+<style>
+.badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: white;
+    font-size: 11px;
+}
+.badge-danger {
+    background-color: #dc3545;
+}
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th, .table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+</style>
+{% endblock %}

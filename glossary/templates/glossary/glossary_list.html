@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Глоссарий - {{ project.title }} - TranslationHub{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'teams:team_detail' project.team.id %}">
+          <i class="fas fa-users me-1"></i>{{ project.team.name }}
+        </a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'projects:project_detail' project.id %}">
+          <i class="fas fa-project-diagram me-1"></i>{{ project.title }}
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">Глоссарий</li>
+    </ol>
+  </nav>
+
+  <!-- Заголовок -->
+  <div class="row mb-4">
+    <div class="col">
+      <div class="d-flex justify-content-between align-items-center">
+        <h1 class="h2 mb-0">
+          <i class="fas fa-book me-2 text-primary"></i>Глоссарий проекта
+        </h1>
+        <a href="{% url 'glossary:glossary_create' project.id %}" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Добавить термин
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Заглушка - функция в разработке -->
+  <div class="row">
+    <div class="col">
+      <div class="card">
+        <div class="card-body text-center py-5">
+          <i class="fas fa-tools fa-4x text-muted mb-3"></i>
+          <h3 class="text-muted">Функция в разработке</h3>
+          <p class="text-muted mb-4">
+            Глоссарий проекта находится в стадии разработки. 
+            Здесь будут храниться термины, персонажи, события и определения для вашего проекта.
+          </p>
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Планируемые возможности:</strong>
+            <ul class="list-unstyled mt-2 mb-0">
+              <li>• Создание и редактирование терминов</li>
+              <li>• Описания персонажей и их характеристик</li>
+              <li>• События и их хронология</li>
+              <li>• Поиск и категоризация</li>
+              <li>• Экспорт глоссария</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

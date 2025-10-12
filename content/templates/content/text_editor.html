@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if text_content %}Редактирование: {{ text_content.title }}{% else %}Новый текст{% endif %} - TranslationHub
+{% endblock %}
+
+{% block extra_css %}
+{{ form.media.css }}
+{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1400px;">
+    <!-- Breadcrumb навигация -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'content:editor' %}">
+                    <i class="fas fa-home me-1"></i>Редактор
+                </a>
+            </li>
+            {% if text_content %}
+            <li class="breadcrumb-item">
+                <a href="{% url 'content:project_texts' text_content.project.id %}">
+                    <i class="fas fa-folder me-1"></i>{{ text_content.project.name }}
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="fas fa-file-text me-1"></i>{{ text_content.title }}
+            </li>
+            {% else %}
+            <li class="breadcrumb-item active" aria-current="page">
+                <i class="fas fa-plus me-1"></i>Новый текст
+            </li>
+            {% endif %}
+        </ol>
+    </nav>
+    
+    <!-- Заголовок страницы -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            {% if text_content %}
+                <i class="fas fa-edit me-2 text-primary"></i>Редактирование текста
+            {% else %}
+                <i class="fas fa-plus me-2 text-success"></i>Создание нового текста
+            {% endif %}
+        </h2>
+        
+        <!-- Индикатор автосохранения -->
+        <div class="d-flex align-items-center">
+            <span class="text-muted me-3" id="autosave-status">
+                <i class="fas fa-clock me-1"></i>
+                {% if text_content and text_content.last_autosave %}
+                    Автосохранение: {{ text_content.last_autosave|date:"H:i:s" }}
+                {% else %}
+                    Автосохранение: готово
+                {% endif %}
+            </span>
+            {% if text_content %}
+            <span class="badge {% if text_content.is_draft %}bg-warning{% else %}bg-success{% endif %}">
+                {% if text_content.is_draft %}
+                    <i class="fas fa-edit me-1"></i>Черновик
+                {% else %}
+                    <i class="fas fa-check me-1"></i>Опубликован
+                {% endif %}
+            </span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Форма редактора -->
+    <form method="post" id="text-form" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="row mb-4">
+            <!-- Заголовок -->
+            <div class="col-lg-8 col-md-7 mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-heading me-2" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="Заголовок должен быть кратким и описательным"></i>Заголовок текста
+                    <span class="text-danger" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="top" 
+                          title="Обязательное поле">*</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.title.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Введите описательный заголовок для вашего текста</div>
+            </div>
+            
+            <!-- Проект -->
+            <div class="col-lg-4 col-md-5 mb-3">
+                <label for="{{ form.project.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-folder me-2" 
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="Выберите проект команды для организации контента"></i>Проект
+                    <span class="text-danger" 
+                          data-bs-toggle="tooltip" 
+                          data-bs-placement="top" 
+                          title="Обязательное поле">*</span>
+                </label>
+                {{ form.project }}
+                {% if form.project.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.project.errors %}
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                <div class="form-text">Выберите проект для организации контента</div>
+            </div>
+        </div>
+        
+        <!-- Текстовый редактор -->
+        <div class="mb-4">
+            <label for="{{ form.content.id_for_label }}" class="form-label fw-bold">
+                <i class="fas fa-file-text me-2" 
+                   data-bs-toggle="tooltip" 
+                   data-bs-placement="top" 
+                   title="Основное содержимое текста с поддержкой форматирования"></i>Содержимое
+                <span class="text-danger" 
+                      data-bs-toggle="tooltip" 
+                      data-bs-placement="top" 
+                      title="Обязательное поле">*</span>
+            </label>
+            <div class="editor-container">
+                {{ form.content }}
+                <!-- Progress bar для автосохранения -->
+                <div class="progress mt-2" id="autosave-progress" style="height: 3px; display: none;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" 
+                         style="width: 0%"></div>
+                </div>
+            </div>
+            {% if form.content.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.content.errors %}
+                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <div class="form-text">Используйте панель инструментов для форматирования текста</div>
+        </div>
+        
+        <!-- Кнопки управления -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary" 
+                            data-bs-toggle="tooltip" 
+                            data-bs-placement="top" 
+                            title="Сохранить изменения в базе данных">
+                        <i class="fas fa-save me-2"></i>Сохранить
+                    </button>
+                    <a href="{% url 'content:editor' %}" class="btn btn-secondary"
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="Вернуться к главной странице редактора">
+                        <i class="fas fa-arrow-left me-2"></i>Назад к списку
+                    </a>
+                    {% if text_content %}
+                    <a href="{% url 'content:project_texts' text_content.project.id %}" class="btn btn-outline-secondary"
+                       data-bs-toggle="tooltip" 
+                       data-bs-placement="top" 
+                       title="Перейти к списку текстов проекта">
+                        <i class="fas fa-folder me-2"></i>К проекту
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="d-flex justify-content-end align-items-center">
+                    <!-- Статус черновика -->
+                    <div class="form-check form-switch">
+                        {{ form.is_draft }}
+                        <label class="form-check-label fw-bold" for="{{ form.is_draft.id_for_label }}">
+                            <i class="fas fa-edit me-1"></i>Черновик
+                        </label>
+                    </div>
+                </div>
+                <div class="form-text text-end">
+                    Снимите галочку для публикации
+                </div>
+            </div>
+        </div>
+        
+        <!-- Дополнительная информация -->
+        {% if text_content %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3 col-6 mb-2">
+                                <small class="text-muted d-block">Создан</small>
+                                <strong>{{ text_content.created_at|date:"d.m.Y H:i" }}</strong>
+                            </div>
+                            <div class="col-md-3 col-6 mb-2">
+                                <small class="text-muted d-block">Обновлен</small>
+                                <strong>{{ text_content.updated_at|date:"d.m.Y H:i" }}</strong>
+                            </div>
+                            <div class="col-md-3 col-6 mb-2">
+                                <small class="text-muted d-block">Автор</small>
+                                <strong>{{ text_content.author.display_name|default:text_content.author.username }}</strong>
+                            </div>
+                            {% if text_content.last_autosave %}
+                            <div class="col-md-3 col-6 mb-2">
+                                <small class="text-muted d-block">Автосохранение</small>
+                                <strong>{{ text_content.last_autosave|date:"d.m.Y H:i" }}</strong>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Модальное окно подтверждения выхода -->
+<div class="modal fade" id="unsavedChangesModal" tabindex="-1" aria-labelledby="unsavedChangesModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="unsavedChangesModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Несохраненные изменения
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">
+                    <i class="fas fa-info-circle me-2 text-info"></i>
+                    У вас есть несохраненные изменения в тексте.
+                </p>
+                <p class="mb-0">
+                    Вы уверены, что хотите покинуть страницу? Все несохраненные изменения будут потеряны.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Остаться на странице
+                </button>
+                <button type="button" class="btn btn-warning" id="confirmLeaveBtn">
+                    <i class="fas fa-sign-out-alt me-2"></i>Покинуть страницу
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Передача данных в JavaScript -->
+<script>
+    // Передаем ID текста в JavaScript для автосохранения
+    window.textId = {% if text_content %}{{ text_content.id }}{% else %}null{% endif %};
+    window.autosaveUrl = "{% url 'content:autosave' %}";
+    window.csrfToken = "{{ csrf_token }}";
+    
+    // Передаем данные о черновике для восстановления
+    {% if text_content and text_content.draft_content %}
+    window.draftContent = {{ text_content.draft_content|escapejs }};
+    {% else %}
+    window.draftContent = null;
+    {% endif %}
+    
+    {% if text_content and text_content.last_autosave %}
+    window.lastAutosave = "{{ text_content.last_autosave|date:'c' }}";
+    {% else %}
+    window.lastAutosave = null;
+    {% endif %}
+</script>
+
+<!-- Стили для редактора -->
+<style>
+.editor-container {
+    position: relative;
+}
+
+.editor-container .tox-tinymce {
+    border-radius: 0.375rem;
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.editor-container .tox-tinymce:focus-within {
+    border-color: #86b7fe;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.tox-toolbar {
+    background: #f8f9fa !important;
+    border-bottom: 1px solid #dee2e6 !important;
+}
+
+#autosave-status {
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.form-check-input:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+/* Оптимизация размеров страницы */
+.container {
+    max-width: 1400px !important;
+}
+
+@media (max-width: 1400px) {
+    .container {
+        max-width: 100% !important;
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch !important;
+    }
+    
+    .d-flex.flex-wrap.gap-2 {
+        justify-content: center;
+    }
+    
+    .d-flex.justify-content-end {
+        justify-content: center !important;
+    }
+    
+    #autosave-status {
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .breadcrumb {
+        font-size: 0.875rem;
+    }
+    
+    .card-body .row.text-center > div {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    .form-label {
+        font-size: 0.9rem;
+    }
+    
+    .form-text {
+        font-size: 0.8rem;
+    }
+    
+    .breadcrumb-item {
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ form.media.js }}
+<script>
+    // Упрощенная версия автосохранения с использованием только Bootstrap
+    document.addEventListener('DOMContentLoaded', function() {
+        let isDirty = false;
+        let isAutosaving = false;
+        const statusElement = document.getElementById('autosave-status');
+        
+        // Инициализация Bootstrap tooltips
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Получение CSRF токена
+        function getCSRFToken() {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            return csrfToken ? csrfToken.value : '';
+        }
+        
+        // Простое автосохранение
+        function autosaveContent() {
+            if (!isDirty || !window.textId || isAutosaving) return;
+            
+            isAutosaving = true;
+            const tinymceEditor = tinymce.get('id_content');
+            if (!tinymceEditor) {
+                isAutosaving = false;
+                return;
+            }
+            
+            const content = tinymceEditor.getContent();
+            const titleInput = document.querySelector('input[name="title"]');
+            const title = titleInput ? titleInput.value : '';
+            
+            // Обновляем статус
+            if (statusElement) {
+                statusElement.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+                statusElement.className = 'saving';
+            }
+            
+            fetch('/content/autosave/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({
+                    title: title,
+                    content: content,
+                    text_id: window.textId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    isDirty = false;
+                    if (statusElement) {
+                        statusElement.innerHTML = `<i class="fas fa-check me-1"></i>Сохранено: ${new Date().toLocaleTimeString()}`;
+                        statusElement.className = 'success';
+                    }
+                } else {
+                    throw new Error(data.error || 'Ошибка сохранения');
+                }
+            })
+            .catch(error => {
+                console.error('Autosave error:', error);
+                if (statusElement) {
+                    statusElement.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Ошибка сохранения';
+                    statusElement.className = 'error';
+                }
+            })
+            .finally(() => {
+                isAutosaving = false;
+            });
+        }
+        
+        // Отслеживание изменений в TinyMCE
+        const checkTinyMCE = setInterval(() => {
+            const editor = tinymce.get('id_content');
+            if (editor) {
+                clearInterval(checkTinyMCE);
+                editor.on('change keyup paste', () => {
+                    isDirty = true;
+                });
+            }
+        }, 100);
+        
+        // Отслеживание изменений в заголовке
+        const titleInput = document.querySelector('input[name="title"]');
+        if (titleInput) {
+            titleInput.addEventListener('input', () => {
+                isDirty = true;
+            });
+        }
+        
+        // Автосохранение каждые 30 секунд
+        if (window.textId) {
+            setInterval(autosaveContent, 30000);
+        }
+        
+        // Предупреждение при закрытии страницы
+        window.addEventListener('beforeunload', function(e) {
+            if (isDirty) {
+                const message = 'У вас есть несохраненные изменения.';
+                e.preventDefault();
+                e.returnValue = message;
+                return message;
+            }
+        });
+        
+        // Сброс флага при отправке формы
+        const textForm = document.getElementById('text-form');
+        if (textForm) {
+            textForm.addEventListener('submit', () => {
+                isDirty = false;
+            });
+        }
+        
+        // Экспорт для совместимости
+        window.contentEditor = {
+            isDirty: () => isDirty,
+            setDirty: (dirty) => { isDirty = dirty; }
+        };
+    });
+</script>
+{% endblock %}

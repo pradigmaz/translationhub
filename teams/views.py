@@ -3,11 +3,15 @@ from django.urls import reverse_lazy
 from django.db.models import Q
 from django.http import Http404, JsonResponse
 from django.views.generic import ListView, DetailView, CreateView, View
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.db import transaction
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from .models import Team, TeamMembership, TeamStatusHistory, TeamStatus, ensure_leader_role_exists
 from .utils import deactivate_team, reactivate_team, disband_team, can_perform_team_action
+from .mixins import TeamPermissionRequiredMixin
+from .permission_checker import RolePermissionChecker
+from .exceptions import TeamPermissionDenied, TeamNotFoundError, TeamStatusError
 from django import forms
 import logging
 import json
@@ -170,9 +174,11 @@ class TeamDetailView(LoginRequiredMixin, DetailView):
         """
         context = super().get_context_data(**kwargs)
         team = self.get_object()
+        user = self.request.user
         
-        # Добавление проектов команды
-        context["projects"] = team.projects.all().order_by("-created_at")
+        # Добавление проектов команды из приложения projects
+        from projects.models import Project
+        context["projects"] = Project.objects.filter(team=team).order_by("-created_at")
         
         # Получение всех участников команды с их ролями (оптимизированный запрос)
         # Фильтруем участников по активности для неактивных команд
@@ -187,17 +193,41 @@ class TeamDetailView(LoginRequiredMixin, DetailView):
         context['memberships'] = memberships
         
         # Определение прав текущего пользователя
-        context['is_creator'] = team.creator == self.request.user
+        context['is_creator'] = team.creator == user
         
         # Получение информации о членстве текущего пользователя
-        context['user_membership'] = memberships.filter(user=self.request.user).first()
+        context['user_membership'] = memberships.filter(user=user).first()
         
         # Добавляем информацию о статусе команды для управления
-        context['can_manage_team'] = team.can_be_managed_by(self.request.user)
+        context['can_manage_team'] = team.can_be_managed_by(user)
         context['team_status_display'] = team.get_status_display()
         context['can_deactivate'] = team.status == TeamStatus.ACTIVE
         context['can_reactivate'] = team.status == TeamStatus.INACTIVE
         context['can_disband'] = team.status in [TeamStatus.ACTIVE, TeamStatus.INACTIVE]
+        
+        # Проверка разрешений пользователя в команде
+        user_permissions = RolePermissionChecker.get_user_permissions_in_team(user, team)
+        context['user_permissions'] = user_permissions
+        
+        # Проверка конкретных разрешений для отображения элементов интерфейса
+        context['can_manage_team_permission'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_manage_team'
+        )
+        context['can_invite_members'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_invite_members'
+        )
+        context['can_remove_members'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_remove_members'
+        )
+        context['can_assign_roles'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_assign_roles'
+        )
+        context['can_create_project'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_create_project'
+        )
+        context['can_manage_project'] = RolePermissionChecker.user_has_team_permission(
+            user, team, 'can_manage_project'
+        )
         
         # Последние изменения статуса для отображения в карточке
         context['recent_status_changes'] = team.status_history.select_related('changed_by')[:5]
@@ -275,15 +305,33 @@ class TeamStatusChangeView(LoginRequiredMixin, View):
             
         Raises:
             Http404: Если команда не найдена или нет прав доступа
+            PermissionDenied: Если нет разрешения на управление командой
         """
         team = get_object_or_404(Team, pk=team_id)
-        if not team.can_be_managed_by(self.request.user):
+        user = self.request.user
+        
+        # Проверяем базовые права доступа к команде
+        if not team.can_be_managed_by(user):
             logger = logging.getLogger(__name__)
             logger.warning(
-                f"Пользователь {self.request.user.username} попытался получить доступ "
-                f"к управлению командой {team.name} без соответствующих прав"
+                f"Пользователь {user.username} попытался получить доступ "
+                f"к управлению командой {team.name} без базовых прав"
             )
-            raise Http404("Команда не найдена")
+            raise PermissionDenied("У вас нет прав для управления этой командой")
+        
+        # Проверяем разрешение на управление командой через роли
+        if not RolePermissionChecker.user_has_team_permission(user, team, 'can_manage_team'):
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Пользователь {user.username} попытался получить доступ "
+                f"к управлению командой {team.name} без разрешения can_manage_team"
+            )
+            raise TeamPermissionDenied(
+                team=team, 
+                permission='can_manage_team', 
+                user=user
+            )
+        
         return team
     
     def post(self, request, team_id):
@@ -426,6 +474,46 @@ class TeamStatusChangeView(LoginRequiredMixin, View):
         # Проверяем доступ к команде
         self.get_team(team_id)
         return redirect('teams:team_detail', pk=team_id)
+
+
+def team_permission_denied_view(request, exception=None):
+    """
+    Кастомное представление для обработки ошибок доступа к командам.
+    
+    Args:
+        request: HTTP запрос
+        exception: Исключение PermissionDenied (опционально)
+        
+    Returns:
+        HttpResponse: Страница с информацией об ошибке доступа
+    """
+    logger = logging.getLogger(__name__)
+    
+    # Получаем информацию об ошибке
+    error_message = str(exception) if exception else "У вас нет прав для выполнения этого действия"
+    
+    # Определяем тип ошибки и предложения
+    suggestions = [
+        "Убедитесь, что вы являетесь участником команды",
+        "Проверьте, что ваша роль в команде имеет необходимые разрешения",
+        "Обратитесь к руководителю команды для назначения соответствующих прав",
+        "Свяжитесь с администратором системы, если считаете, что произошла ошибка"
+    ]
+    
+    # Логируем ошибку доступа
+    logger.warning(
+        f"Ошибка доступа к команде для пользователя {request.user.username}: {error_message}"
+    )
+    
+    context = {
+        'error_message': error_message,
+        'object_type': 'Команда',
+        'error_type': 'permission_denied',
+        'suggestions': suggestions,
+        'back_url': request.META.get('HTTP_REFERER'),
+    }
+    
+    return render(request, 'teams/errors/403.html', context, status=403)
 
 
 class TeamCountsView(LoginRequiredMixin, View):

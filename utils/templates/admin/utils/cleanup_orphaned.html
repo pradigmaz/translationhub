@@ -1,0 +1,281 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load utils.admin_monitoring %}
+
+{% block title %}{{ title }} | {{ site_title|default:"Django site admin" }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Главная</a>
+    &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="module">
+    <h1>{{ title }}</h1>
+    
+    {% if error %}
+        <div class="alert alert-danger">
+            <strong>Ошибка:</strong> {{ error }}
+        </div>
+    {% endif %}
+    
+    <!-- Форма для запуска очистки -->
+    <div class="module">
+        <h2>Параметры очистки</h2>
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="dry_run" checked> 
+                    Тестовый режим (показать что будет удалено без фактического удаления)
+                </label>
+            </div>
+            
+            <div class="form-group">
+                <label>Типы файлов для проверки:</label><br>
+                <label><input type="checkbox" name="file_types" value="user" checked> Файлы пользователей</label><br>
+                <label><input type="checkbox" name="file_types" value="team" checked> Файлы команд</label><br>
+                <label><input type="checkbox" name="file_types" value="project" checked> Файлы проектов</label><br>
+                <label><input type="checkbox" name="file_types" value="image" checked> Изображения</label><br>
+                <label><input type="checkbox" name="file_types" value="temporary" checked> Временные файлы</label><br>
+            </div>
+            
+            <button type="submit" class="button default">Запустить очистку</button>
+        </form>
+    </div>
+    
+    <!-- Результаты очистки -->
+    {% if cleanup_result %}
+    <div class="module">
+        <h2>Результаты очистки</h2>
+        
+        {% if cleanup_result.success %}
+            <div class="alert alert-success">
+                <strong>Очистка завершена успешно!</strong>
+            </div>
+            
+            <table class="table">
+                <tr>
+                    <th>Найдено осиротевших файлов:</th>
+                    <td>{{ cleanup_result.statistics.orphaned_files_found }}</td>
+                </tr>
+                {% if cleanup_result.statistics.dry_run %}
+                <tr>
+                    <th>Файлов к удалению:</th>
+                    <td>{{ cleanup_result.deleted_files|length }}</td>
+                </tr>
+                <tr>
+                    <th>Места будет освобождено:</th>
+                    <td>{{ cleanup_result.statistics.space_freed|format_file_size }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <th>Удалено файлов:</th>
+                    <td>{{ cleanup_result.statistics.files_deleted }}</td>
+                </tr>
+                <tr>
+                    <th>Освобождено места:</th>
+                    <td>{{ cleanup_result.statistics.space_freed|format_file_size }}</td>
+                </tr>
+                {% endif %}
+            </table>
+            
+            <!-- Ошибки -->
+            {% if cleanup_result.statistics.errors %}
+            <div class="module">
+                <h3>Ошибки при очистке</h3>
+                <ul>
+                    {% for error in cleanup_result.statistics.errors %}
+                    <li class="error">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Детали по файлам -->
+            {% if cleanup_result.deleted_files %}
+            <div class="module">
+                <h3>
+                    <a href="#" onclick="toggleFileDetails(); return false;">
+                        Детали по файлам <span id="file-toggle-text">[показать]</span>
+                    </a>
+                </h3>
+                <div id="file-details" style="display: none;">
+                    <!-- Группировка по типам -->
+                    {% regroup cleanup_result.deleted_files by type as files_by_type %}
+                    {% for file_group in files_by_type %}
+                        <h4>{{ file_group.grouper|capfirst }}</h4>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Путь</th>
+                                    <th>Размер</th>
+                                    <th>Причина</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in file_group.list|slice:":10" %}
+                                <tr>
+                                    <td>{{ file.path|truncatechars:60 }}</td>
+                                    <td>{{ file.size|format_file_size }}</td>
+                                    <td>{{ file.reason }}</td>
+                                    <td>
+                                        {% if file.deleted %}
+                                            <span class="badge badge-success">Удален</span>
+                                        {% else %}
+                                            <span class="badge badge-info">К удалению</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if file_group.list|length > 10 %}
+                                <tr>
+                                    <td colspan="4"><em>... и еще {{ file_group.list|length|add:"-10" }} файлов</em></td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            
+        {% else %}
+            <div class="alert alert-danger">
+                <strong>Ошибка очистки:</strong> {{ cleanup_result.error }}
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    <!-- Действия -->
+    <div class="module">
+        <h2>Действия</h2>
+        <p>
+            <a href="{% url 'admin:file_metrics' %}" class="button">Метрики файловой системы</a>
+            <a href="{% url 'admin:operation_stats' %}" class="button">Статистика операций</a>
+            <button onclick="runApiCleanup()" class="button">API очистка</button>
+        </p>
+    </div>
+    
+    <!-- Предупреждения -->
+    <div class="module">
+        <h2>⚠️ Важные предупреждения</h2>
+        <ul>
+            <li><strong>Всегда используйте тестовый режим</strong> перед реальной очисткой</li>
+            <li><strong>Создайте резервную копию</strong> медиа папки перед очисткой</li>
+            <li><strong>Проверьте результаты</strong> тестового режима перед реальным удалением</li>
+            <li><strong>Остановите загрузку файлов</strong> во время очистки</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+function toggleFileDetails() {
+    var details = document.getElementById('file-details');
+    var toggleText = document.getElementById('file-toggle-text');
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        toggleText.textContent = '[скрыть]';
+    } else {
+        details.style.display = 'none';
+        toggleText.textContent = '[показать]';
+    }
+}
+
+function runApiCleanup() {
+    if (!confirm('Запустить API очистку в тестовом режиме?')) {
+        return;
+    }
+    
+    fetch('{% url "admin:api_cleanup" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            'dry_run': true,
+            'file_types': ['user', 'team', 'project', 'image', 'temporary']
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('API очистка завершена. Найдено ' + data.statistics.orphaned_files_found + ' осиротевших файлов.');
+        } else {
+            alert('Ошибка API очистки: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Ошибка запроса: ' + error);
+    });
+}
+</script>
+
+<style>
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+}
+.badge {
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: white;
+    font-size: 11px;
+}
+.badge-success {
+    background-color: #28a745;
+}
+.badge-info {
+    background-color: #17a2b8;
+}
+.badge-danger {
+    background-color: #dc3545;
+}
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+}
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table th, .table td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+.alert {
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+}
+.alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+}
+.error {
+    color: #dc3545;
+}
+</style>
+{% endblock %}
